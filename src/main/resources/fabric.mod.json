@@ -2,14 +2,14 @@
 	"schemaVersion": 1,
 	"id": "deathlockout",
 	"version": "${version}",
-	"name": "DeathLockout",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"name": "Death Lockout",
+	"description": "Race to die in unique ways!",
 	"authors": [
-		"Me!"
+		"Fayaz"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://fayaz.one/",
+		"sources": "https://github.com/fayza12g/deathlockout"
 	},
 	"license": "CC0-1.0",
 	"icon": "assets/deathlockout/icon.png",
