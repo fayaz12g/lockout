@@ -50,7 +50,8 @@ public class LockoutGame {
     }
 
     public void start(MinecraftServer server) {
-        if (canStart() >= 2) {
+        if (canStart() < 2) {
+            broadcastToServer(server, Component.literal("🎮 FAILED TO START").withStyle(style -> style.withColor(0xFF5555).withBold(true)));
             return;
         }
 
