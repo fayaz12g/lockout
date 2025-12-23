@@ -126,8 +126,77 @@
         font-size: 2.2rem;
       }
     }
+    .download {
+  text-align: center;
+}
+
+.download p {
+  color: var(--muted);
+  margin-bottom: 1.25rem;
+}
+
+.download-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  display: inline-block;
+  padding: 0.85rem 1.4rem;
+  border-radius: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  color: #fff;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  opacity: 0.95;
+}
+
+.btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* Platform colors */
+.btn.modrinth {
+  background: linear-gradient(135deg, #1bd96a, #14b85a);
+}
+
+.btn.curseforge {
+  background: linear-gradient(135deg, #f16436, #e5532a);
+}
+
   </style>
 </head>
+  <section class="download">
+  <h2>⬇️ Download Death Lockout</h2>
+  <p>Available on your favorite mod platforms</p>
+
+  <div class="download-buttons">
+    <a
+      href="https://modrinth.com/mod/death-lockout"
+      target="_blank"
+      class="btn modrinth"
+    >
+      Download on Modrinth
+    </a>
+
+    <a
+      href="https://www.curseforge.com/minecraft/mc-mods/death-lockout"
+      target="_blank"
+      class="btn curseforge"
+    >
+      Download on CurseForge
+    </a>
+  </div>
+</section>
+
 <body>
 
   <header>
