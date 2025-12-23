@@ -1,3 +1,5 @@
+![logo](src/main/resources/assets/deathlockout/icon.png)
+
 ## 💀 Death Lockout
 
 **Death Lockout** is a competitive lockout-style game mode where the objective is simple:  
