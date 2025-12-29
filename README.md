@@ -1,4 +1,4 @@
-![logo](src/main/resources/assets/deathlockout/icon.png)
+![logo](src/main/resources/assets/lockout/icon.png)
 
 ## 💀 Death Lockout
 
