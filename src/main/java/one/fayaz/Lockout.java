@@ -38,6 +38,19 @@ public class Lockout implements ModInitializer {
         NAMED_COLORS.put("black", 0x000000);
     }
 
+    private static final int[] DEFAULT_COLORS = {
+            0xFF5555, // red
+            0x5555FF, // blue
+            0x55FF55, // lime
+            0xFFFF55, // yellow
+            0xFF55FF, // magenta
+            0x55FFFF, // cyan
+            0xFFAA00, // orange
+            0xAA00AA, // purple
+            0x00AA00, // green
+            0xFFAAAA  // pink
+    };
+
     @Override
     public void onInitialize() {
         LOGGER.info("Initializing Death Lockout for 1.21.11");
@@ -184,97 +197,108 @@ public class Lockout implements ModInitializer {
                                     )
                             )
                     )
-                    // /lockout add <player> <color>
-                        .then(Commands.literal("add")
-                                .then(Commands.argument("player", EntityArgument.player())
-                                        .then(Commands.argument("color", StringArgumentType.word())
-                                                .suggests((context, builder) -> {
-                                                    for (String colorName : NAMED_COLORS.keySet()) {
-                                                        builder.suggest(colorName);
-                                                    }
-                                                    return builder.buildFuture();
-                                                })
-                                                .executes(ctx -> {
-                                                    ServerPlayer player = EntityArgument.getPlayer(ctx, "player");
-                                                    String colorStr = StringArgumentType.getString(ctx, "color");
+                    .then(Commands.literal("player")
+                            // /lockout player add <player> [color]
+                            .then(Commands.literal("add")
+                                    .then(Commands.argument("player", EntityArgument.player())
+                                            // With color specified
+                                            .then(Commands.argument("color", StringArgumentType.word())
+                                                    .suggests((context, builder) -> {
+                                                        for (String colorName : NAMED_COLORS.keySet()) {
+                                                            builder.suggest(colorName);
+                                                        }
+                                                        return builder.buildFuture();
+                                                    })
+                                                    .executes(ctx -> {
+                                                        ServerPlayer player = EntityArgument.getPlayer(ctx, "player");
+                                                        String colorStr = StringArgumentType.getString(ctx, "color");
 
-                                                    int color = parseColor(colorStr);
-                                                    if (color == -1) {
-                                                        ctx.getSource().sendFailure(Component.literal("❌ Invalid color! Use hex (#FF5555) or name (red, blue, etc.)"));
-                                                        return 0;
-                                                    }
+                                                        int color = parseColor(colorStr);
+                                                        if (color == -1) {
+                                                            ctx.getSource().sendFailure(Component.literal("❌ Invalid color! Use hex (#FF5555) or name (red, blue, etc.)"));
+                                                            return 0;
+                                                        }
 
-                                                    // Check if color is already taken
-                                                    String existingPlayer = LockoutGame.INSTANCE.getPlayerWithColor(color);
-                                                    if (existingPlayer != null) {
-                                                        ctx.getSource().sendFailure(Component.literal("❌ " + existingPlayer + " already has that color!"));
-                                                        return 0;
-                                                    }
+                                                        String existingPlayer = LockoutGame.INSTANCE.getPlayerWithColor(color);
+                                                        if (existingPlayer != null) {
+                                                            ctx.getSource().sendFailure(Component.literal("❌ " + existingPlayer + " already has that color!"));
+                                                            return 0;
+                                                        }
 
-                                                    if (LockoutGame.INSTANCE.addPlayer(player, color)) {
-                                                        ctx.getSource().sendSystemMessage(Component.literal("✓ Added " + player.getName().getString()).withStyle(style -> style.withColor(color)));
-                                                    }
-                                                    return 1;
-                                                })
-                                        )
-                                )
-                        )
-                        // /lockout modify <player> <color>
-                        .then(Commands.literal("modify")
-                                .then(Commands.argument("player", EntityArgument.player())
-                                        .then(Commands.argument("color", StringArgumentType.word())
-                                                .suggests((context, builder) -> {
-                                                    for (String colorName : NAMED_COLORS.keySet()) {
-                                                        builder.suggest(colorName);
-                                                    }
-                                                    return builder.buildFuture();
-                                                })
-                                                .executes(ctx -> {
-                                                    ServerPlayer player = EntityArgument.getPlayer(ctx, "player");
-                                                    String colorStr = StringArgumentType.getString(ctx, "color");
+                                                        if (LockoutGame.INSTANCE.addPlayer(player, color)) {
+                                                            ctx.getSource().sendSystemMessage(Component.literal("✓ Added " + player.getName().getString()).withStyle(style -> style.withColor(color)));
+                                                        }
+                                                        return 1;
+                                                    })
+                                            )
+                                            // Without color specified - use default
+                                            .executes(ctx -> {
+                                                ServerPlayer player = EntityArgument.getPlayer(ctx, "player");
+                                                int color = getNextAvailableColor();
 
-                                                    int color = parseColor(colorStr);
-                                                    if (color == -1) {
-                                                        ctx.getSource().sendFailure(Component.literal("❌ Invalid color! Use hex (#FF5555) or name (red, blue, etc.)"));
-                                                        return 0;
-                                                    }
-
-                                                    // Check if color is already taken by someone else
-                                                    String existingPlayer = LockoutGame.INSTANCE.getPlayerWithColor(color);
-                                                    if (existingPlayer != null && !existingPlayer.equals(player.getName().getString())) {
-                                                        ctx.getSource().sendFailure(Component.literal("❌ " + existingPlayer + " already has that color!"));
-                                                        return 0;
-                                                    }
-
-                                                    if (LockoutGame.INSTANCE.modifyPlayer(player, color)) {
-                                                        ctx.getSource().sendSystemMessage(Component.literal("✓ Modified " + player.getName().getString() + " color").withStyle(style -> style.withColor(color)));
-                                                        LockoutGame.INSTANCE.syncToPlayer(player);
-                                                    } else {
-                                                        ctx.getSource().sendFailure(Component.literal("❌ Player not in lockout game!"));
-                                                        return 0;
-                                                    }
-                                                    return 1;
-                                                })
-                                        )
-                                )
-                        )
-                    // /lockout remove <player>
-                    .then(Commands.literal("remove")
-                            .then(Commands.argument("player", EntityArgument.player())
-                                    .executes(ctx -> {
-                                        ServerPlayer player = EntityArgument.getPlayer(ctx, "player");
-
-                                        if (LockoutGame.INSTANCE.removePlayer(player)) {
-                                            ctx.getSource().sendSystemMessage(Component.literal("✓ Removed " + player.getName().getString() + " from lockout").withStyle(style -> style.withColor(0x55FF55)));
-                                            player.sendSystemMessage(Component.literal("✓ You were removed from the lockout game").withStyle(style -> style.withColor(0xFFAA00)));
-                                        } else {
-                                            ctx.getSource().sendFailure(Component.literal("❌ Cannot remove player (not in game or game is active)"));
-                                            return 0;
-                                        }
-                                        return 1;
-                                    })
+                                                if (LockoutGame.INSTANCE.addPlayer(player, color)) {
+                                                    ctx.getSource().sendSystemMessage(Component.literal("✓ Added " + player.getName().getString() + " (auto-color)").withStyle(style -> style.withColor(color)));
+                                                }
+                                                return 1;
+                                            })
+                                    )
                             )
-                    )
+                            // /lockout player modify <player> <color>
+                            .then(Commands.literal("modify")
+                                    .then(Commands.argument("player", EntityArgument.player())
+                                            .then(Commands.argument("color", StringArgumentType.word())
+                                                    .suggests((context, builder) -> {
+                                                        for (String colorName : NAMED_COLORS.keySet()) {
+                                                            builder.suggest(colorName);
+                                                        }
+                                                        return builder.buildFuture();
+                                                    })
+                                                    .executes(ctx -> {
+                                                        ServerPlayer player = EntityArgument.getPlayer(ctx, "player");
+                                                        String colorStr = StringArgumentType.getString(ctx, "color");
+
+                                                        int color = parseColor(colorStr);
+                                                        if (color == -1) {
+                                                            ctx.getSource().sendFailure(Component.literal("❌ Invalid color! Use hex (#FF5555) or name (red, blue, etc.)"));
+                                                            return 0;
+                                                        }
+
+                                                        String existingPlayer = LockoutGame.INSTANCE.getPlayerWithColor(color);
+                                                        if (existingPlayer != null && !existingPlayer.equals(player.getName().getString())) {
+                                                            ctx.getSource().sendFailure(Component.literal("❌ " + existingPlayer + " already has that color!"));
+                                                            return 0;
+                                                        }
+
+                                                        if (LockoutGame.INSTANCE.modifyPlayer(player, color)) {
+                                                            ctx.getSource().sendSystemMessage(Component.literal("✓ Modified " + player.getName().getString() + " color").withStyle(style -> style.withColor(color)));
+                                                            LockoutGame.INSTANCE.syncToPlayer(player);
+                                                        } else {
+                                                            ctx.getSource().sendFailure(Component.literal("❌ Player not in lockout game!"));
+                                                            return 0;
+                                                        }
+                                                        return 1;
+                                                    })
+                                            )
+                                    )
+                            )
+                            // /lockout player remove <player>
+                            .then(Commands.literal("remove")
+                                    .then(Commands.argument("player", EntityArgument.player())
+                                            .executes(ctx -> {
+                                                ServerPlayer player = EntityArgument.getPlayer(ctx, "player");
+
+                                                if (LockoutGame.INSTANCE.removePlayer(player)) {
+                                                    ctx.getSource().sendSystemMessage(Component.literal("✓ Removed " + player.getName().getString() + " from lockout").withStyle(style -> style.withColor(0x55FF55)));
+                                                    player.sendSystemMessage(Component.literal("✓ You were removed from the lockout game").withStyle(style -> style.withColor(0xFFAA00)));
+                                                } else {
+                                                    ctx.getSource().sendFailure(Component.literal("❌ Cannot remove player (not in game or game is active)"));
+                                                    return 0;
+                                                }
+                                                return 1;
+                                            })
+                                    )
+                            )
+                        )
                     // /lockout reset
                     .then(Commands.literal("reset")
                             .executes(ctx -> {
@@ -310,6 +334,16 @@ public class Lockout implements ModInitializer {
                     )
             );
         });
+    }
+
+    private static int getNextAvailableColor() {
+        for (int color : DEFAULT_COLORS) {
+            if (LockoutGame.INSTANCE.getPlayerWithColor(color) == null) {
+                return color;
+            }
+        }
+        // If all default colors taken, generate a random one
+        return 0x555555 + (int)(Math.random() * 0xAAAAAA);
     }
 
     private static int parseColor(String colorStr) {
