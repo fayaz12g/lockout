@@ -307,6 +307,14 @@ public class Lockout implements ModInitializer {
                                 return 1;
                             })
                     )
+                    // /lockout spawnpoint
+                    .then(Commands.literal("spawnpoint")
+                            .executes(ctx -> {
+                                LockoutGame.INSTANCE.setSpawn(ctx.getSource().getPlayer());
+                                ctx.getSource().sendSystemMessage(Component.literal("✓ Lockout spawnpoint set."));
+                                return 1;
+                            })
+                    )
                     // /lockout status
                     .then(Commands.literal("status")
                             .executes(ctx -> {

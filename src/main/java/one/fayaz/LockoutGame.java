@@ -316,6 +316,10 @@ public class LockoutGame {
         LockoutNetworking.broadcastState(server, goal, new ArrayList<>(players.values()), mode, paused, pausedPlayerName);
     }
 
+    public void setSpawn(ServerPlayer player) {
+
+    }
+
     public void stop(MinecraftServer server) {
         // Unfreeze all players before stopping
         if (isCountingDown || paused) {
