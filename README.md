@@ -1,6 +1,6 @@
 ![logo](src/main/resources/assets/lockout/icon.png)
 
-## 🎮 Fayaz's Lockout
+## Fayaz's Lockout
 ### Multiplayer - 2-100 Players
 
 **Fayaz's Lockout** is a competitive lockout-style game mode with multiple play modes where players race to claim unique objectives before their opponents.
@@ -15,8 +15,10 @@ Set a goal (for example, 5) and race against other players to reach that number 
 **Die in as many *unique* ways as possible before your opponents do.**
 
 Deaths can be matched by two methods:
-- **SOURCE** (recommended): Matches by damage type + entity type (more reliable)
-- **MESSAGE**: Matches by death message text with player names removed
+- **SOURCE**: Matches by damage type + entity type 
+  - Burned to death while fighting Zombie is the same as burned to death.
+- **MESSAGE**: Matches by death message text with player names removed 
+  - Burned to death while fighting Zombie is DIFFERENT from burned to death.
 
 Examples of unique deaths:
 - Killed by Iron Golem
@@ -46,8 +48,8 @@ Available materials:
 
 Race to complete advancements like:
 - Stone Age, Acquire Hardware, Diamonds!, We Need to Go Deeper, etc.
-- 90+ advancements available in vanilla Minecraft
-- Recipe advancements are excluded
+- 125 advancements available in vanilla Minecraft
+- Recipe unlocks are excluded
 
 ### 🍖 Foods Mode
 **Eat unique food types before your opponents do.**
@@ -64,9 +66,8 @@ Claim foods by consuming them:
 - Each player earns **1 point per unique objective**
 - An objective can only be scored **once per game**, globally
 - The first player to reach the target goal **wins**
-- Supports **2-100 players** competing simultaneously
+- Supports **2+ players** competing simultaneously. No limit.
 - Each player has a **unique custom color** to track their progress on the HUD
-- Creativity, risk-taking, and quick thinking are rewarded
 
 ---
 
@@ -84,20 +85,11 @@ Default is 5. No upper limit.
 **2. Choose the game mode:**
 ```
 /lockout mode kills
-/lockout mode armor <set|piece>
-/lockout mode advancements
-/lockout mode foods
-/lockout mode death <source|message>
-```
-
-Examples:
-```
-/lockout mode kills
 /lockout mode armor set          (full matching sets required)
 /lockout mode armor piece        (any single piece claims that material)
 /lockout mode advancements
 /lockout mode foods
-/lockout mode death source       (recommended - matches by damage type)
+/lockout mode death source       (matches by damage type)
 /lockout mode death message      (matches by death message text)
 ```
 
@@ -115,9 +107,9 @@ Examples:
 Examples:
 ```
 /lockout player add @p red
-/lockout player add Steve
-/lockout player add Alex #00FF00
-/lockout player add Notch 0xFFAA00
+/lockout player add Fayaz
+/lockout player add Kristaugh #00FF00
+/lockout player add Dream 0xFFAA00
 ```
 
 **4. (Optional) Set a custom spawn point:**
