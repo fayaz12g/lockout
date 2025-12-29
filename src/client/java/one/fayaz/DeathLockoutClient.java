@@ -132,17 +132,8 @@ public class DeathLockoutClient implements ClientModInitializer {
             }
         }
 
-        // 1. Mobs (for death messages containing mob names)
-        for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE) {
-            String entityName = type.getDescription().getString().toLowerCase();
-            if (lower.contains(" " + entityName)) {
-                SpawnEggItem egg = SpawnEggItem.byId(type);
-                if (egg != null) return new ItemStack(egg);
-            }
-        }
-
         // For death mode or fallback, check for keywords in the claim
-        // 2. Environmental
+        // 1. Environmental
         if (lower.contains("discovered")) return new ItemStack(Items.MAGMA_BLOCK);
         else if (lower.contains("lava")) return new ItemStack(Items.LAVA_BUCKET);
         else if (lower.contains("suffocated")) return new ItemStack(Items.SAND);
@@ -162,7 +153,18 @@ public class DeathLockoutClient implements ClientModInitializer {
         else if (lower.contains("freeze") || lower.contains("frozen")) return new ItemStack(Items.POWDER_SNOW_BUCKET);
         else if (lower.contains("shriek")) return new ItemStack(Items.WARDEN_SPAWN_EGG);
 
-        // 3. Fallback
-        return new ItemStack(clientMode.equals("KILLS") ? Items.IRON_SWORD : Items.PLAYER_HEAD);
+        else {
+            // 2. Mobs (for death messages containing mob names)
+            for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE) {
+                String entityName = type.getDescription().getString().toLowerCase();
+                if (lower.contains(entityName)) {
+                    SpawnEggItem egg = SpawnEggItem.byId(type);
+                    if (egg != null) return new ItemStack(egg);
+                }
+            }
+
+            // 3. Fallback
+            return new ItemStack(clientMode.equals("KILLS") ? Items.IRON_SWORD : Items.PLAYER_HEAD);
+        }
     }
 }
