@@ -368,17 +368,7 @@ public class LockoutGame {
         }
 
         this.active = false;
-        this.paused = false;
-        this.pausedPlayerName = "";
-        this.isCountingDown = false;
-        this.countdownTicks = 0;
-        this.players.clear();
-        this.goal = 0;
-        this.mode = GameMode.DEATH;
-        this.deathMatchMode = DeathMatchMode.SOURCE;
-        this.customSpawnPos = null;
-        this.customSpawnDimension = null;
-        LockoutNetworking.broadcastState(server, 0, new ArrayList<>(), GameMode.DEATH, false, "");
+        LockoutNetworking.broadcastState(server, goal, new ArrayList<>(players.values()), mode, paused, pausedPlayerName);
     }
 
     public boolean isActive() {
