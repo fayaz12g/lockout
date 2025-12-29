@@ -48,6 +48,21 @@ public class LockoutNetworking {
         PayloadTypeRegistry.playS2C().register(SYNC_TYPE, LockoutSyncPayload.CODEC);
     }
 
+    public static void sendToPlayer(ServerPlayer player, int goal, List<PlayerEntry> playerEntries, LockoutGame.GameMode mode) {
+        List<PlayerData> playerDataList = new ArrayList<>();
+        for (PlayerEntry entry : playerEntries) {
+            playerDataList.add(new PlayerData(
+                    entry.getUuid(),
+                    entry.getName(),
+                    entry.getColor(),
+                    new ArrayList<>(entry.getClaims())
+            ));
+        }
+
+        LockoutSyncPayload payload = new LockoutSyncPayload(goal, playerDataList, mode.toString());
+        ServerPlayNetworking.send(player, payload);
+    }
+
     public static void broadcastState(MinecraftServer server, int goal, List<PlayerEntry> playerEntries, LockoutGame.GameMode mode) {
         if (server == null) return;
 

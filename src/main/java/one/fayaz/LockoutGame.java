@@ -65,6 +65,10 @@ public class LockoutGame {
         return true;
     }
 
+    public void syncToPlayer(ServerPlayer player) {
+        LockoutNetworking.sendToPlayer(player, goal, new ArrayList<>(players.values()), mode);
+    }
+
     public int canStart() {
         if (goal < 1) {
             return -1;

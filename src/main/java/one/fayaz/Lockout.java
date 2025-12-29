@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
@@ -57,6 +58,11 @@ public class Lockout implements ModInitializer {
             if (damageSource.getEntity() instanceof ServerPlayer killer) {
                 LockoutGame.INSTANCE.handleKill(killer, entity);
             }
+        });
+
+        // 3.5. Register join Event (for resync)
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            LockoutGame.INSTANCE.syncToPlayer(handler.getPlayer());
         });
 
         // 4. Register Commands
