@@ -8,20 +8,20 @@ public class PlayerEntry {
     private final UUID uuid;
     private final String name;
     private final int color;
-    private final List<String> deaths;
+    private final List<String> claims; // Generic: deaths or kills
 
     public PlayerEntry(UUID uuid, String name, int color) {
         this.uuid = uuid;
         this.name = name;
         this.color = color;
-        this.deaths = new ArrayList<>();
+        this.claims = new ArrayList<>();
     }
 
-    public PlayerEntry(UUID uuid, String name, int color, List<String> deaths) {
+    public PlayerEntry(UUID uuid, String name, int color, List<String> claims) {
         this.uuid = uuid;
         this.name = name;
         this.color = color;
-        this.deaths = new ArrayList<>(deaths);
+        this.claims = new ArrayList<>(claims);
     }
 
     public UUID getUuid() {
@@ -36,15 +36,26 @@ public class PlayerEntry {
         return color;
     }
 
-    public List<String> getDeaths() {
-        return deaths;
+    public List<String> getClaims() {
+        return claims;
     }
 
-    public void addDeath(String death) {
-        deaths.add(death);
+    public void addClaim(String claim) {
+        claims.add(claim);
     }
 
     public int getScore() {
-        return deaths.size();
+        return claims.size();
+    }
+
+    // Backwards compatibility
+    @Deprecated
+    public List<String> getDeaths() {
+        return getClaims();
+    }
+
+    @Deprecated
+    public void addDeath(String death) {
+        addClaim(death);
     }
 }

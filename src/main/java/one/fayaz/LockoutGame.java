@@ -4,16 +4,23 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.LivingEntity;
 
 import java.util.*;
 
 public class LockoutGame {
     public static final LockoutGame INSTANCE = new LockoutGame();
 
+    public enum GameMode {
+        DEATH,
+        KILLS
+    }
+
     private boolean active = false;
     private int goal = 0;
+    private GameMode mode = GameMode.DEATH;
     private final Map<UUID, PlayerEntry> players = new LinkedHashMap<>();
-    private final Set<String> claimedDeaths = new HashSet<>();
+    private final Set<String> claimedItems = new HashSet<>(); // Used for both deaths and kills
 
     public void setGoal(int goal) {
         this.goal = goal;
@@ -21,6 +28,10 @@ public class LockoutGame {
 
     public int getGoal() {
         return goal;
+    }
+
+    public GameMode getMode() {
+        return mode;
     }
 
     public boolean addPlayer(ServerPlayer player, int color) {
@@ -49,29 +60,32 @@ public class LockoutGame {
         }
     }
 
-    public void start(MinecraftServer server) {
+    public void start(MinecraftServer server, GameMode mode) {
         if (canStart() < 2) {
             broadcastToServer(server, Component.literal("🎮 FAILED TO START").withStyle(style -> style.withColor(0xFF5555).withBold(true)));
             return;
         }
 
         this.active = true;
-        this.claimedDeaths.clear();
+        this.mode = mode;
+        this.claimedItems.clear();
 
-        // Clear all player death histories
+        // Clear all player claim histories
         for (PlayerEntry entry : players.values()) {
-            entry.getDeaths().clear();
+            entry.getClaims().clear();
         }
 
-        broadcastToServer(server, Component.literal("🎮 Lockout Started! Goal: " + goal).withStyle(style -> style.withColor(0x55FF55).withBold(true)));
-        LockoutNetworking.broadcastState(server, goal, new ArrayList<>(players.values()));
+        String modeName = mode == GameMode.DEATH ? "Death" : "Kills";
+        broadcastToServer(server, Component.literal("🎮 " + modeName + " Lockout Started! Goal: " + goal).withStyle(style -> style.withColor(0x55FF55).withBold(true)));
+        LockoutNetworking.broadcastState(server, goal, new ArrayList<>(players.values()), mode);
     }
 
     public void stop(MinecraftServer server) {
         this.active = false;
         this.players.clear();
         this.goal = 0;
-        LockoutNetworking.broadcastState(server, 0, new ArrayList<>());
+        this.mode = GameMode.DEATH;
+        LockoutNetworking.broadcastState(server, 0, new ArrayList<>(), GameMode.DEATH);
     }
 
     public boolean isActive() {
@@ -79,7 +93,7 @@ public class LockoutGame {
     }
 
     public void handleDeath(ServerPlayer player, DamageSource source) {
-        if (!active) return;
+        if (!active || mode != GameMode.DEATH) return;
 
         UUID uuid = player.getUUID();
         PlayerEntry entry = players.get(uuid);
@@ -96,19 +110,50 @@ public class LockoutGame {
         }
         uniqueKey = uniqueKey.trim();
 
-        if (claimedDeaths.contains(uniqueKey)) {
+        if (claimedItems.contains(uniqueKey)) {
             player.sendSystemMessage(Component.literal("❌ Someone's already claimed that one!").withStyle(style -> style.withColor(0xFF5555)));
             return;
         }
 
-        claimedDeaths.add(uniqueKey);
-        entry.addDeath(uniqueKey);
+        claimedItems.add(uniqueKey);
+        entry.addClaim(uniqueKey);
 
         // Broadcast point gain
         broadcastToServer(player.level().getServer(),
                 Component.literal("⬛ " + entry.getName() + " got a point!").withStyle(style -> style.withColor(entry.getColor())));
 
-        LockoutNetworking.broadcastState(player.level().getServer(), goal, new ArrayList<>(players.values()));
+        LockoutNetworking.broadcastState(player.level().getServer(), goal, new ArrayList<>(players.values()), mode);
+
+        // Check for winner
+        if (entry.getScore() >= goal) {
+            win(player, entry);
+        }
+    }
+
+    public void handleKill(ServerPlayer player, LivingEntity killed) {
+        if (!active || mode != GameMode.KILLS) return;
+
+        UUID uuid = player.getUUID();
+        PlayerEntry entry = players.get(uuid);
+
+        if (entry == null) return;
+
+        // Get the entity type name as the unique key
+        String entityName = killed.getType().getDescription().getString();
+
+        if (claimedItems.contains(entityName)) {
+            player.sendSystemMessage(Component.literal("❌ Someone's already claimed that one!").withStyle(style -> style.withColor(0xFF5555)));
+            return;
+        }
+
+        claimedItems.add(entityName);
+        entry.addClaim(entityName);
+
+        // Broadcast point gain
+        broadcastToServer(player.level().getServer(),
+                Component.literal("⚔ " + entry.getName() + " killed a " + entityName + "!").withStyle(style -> style.withColor(entry.getColor())));
+
+        LockoutNetworking.broadcastState(player.level().getServer(), goal, new ArrayList<>(players.values()), mode);
 
         // Check for winner
         if (entry.getScore() >= goal) {

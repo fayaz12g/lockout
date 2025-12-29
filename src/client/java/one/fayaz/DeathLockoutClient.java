@@ -19,16 +19,17 @@ public class DeathLockoutClient implements ClientModInitializer {
     // Client-side state
     private static int clientGoal = 0;
     private static List<PlayerData> clientPlayers = new ArrayList<>();
+    private static String clientMode = "DEATH";
 
     public static class PlayerData {
         public String name;
         public int color;
-        public List<String> deaths;
+        public List<String> claims;
 
-        public PlayerData(String name, int color, List<String> deaths) {
+        public PlayerData(String name, int color, List<String> claims) {
             this.name = name;
             this.color = color;
-            this.deaths = new ArrayList<>(deaths);
+            this.claims = new ArrayList<>(claims);
         }
     }
 
@@ -38,10 +39,11 @@ public class DeathLockoutClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(LockoutNetworking.SYNC_TYPE, (payload, context) -> {
             context.client().execute(() -> {
                 clientGoal = payload.goal();
+                clientMode = payload.mode();
                 clientPlayers.clear();
 
                 for (LockoutNetworking.PlayerData pd : payload.players()) {
-                    clientPlayers.add(new PlayerData(pd.name(), pd.color(), pd.deaths()));
+                    clientPlayers.add(new PlayerData(pd.name(), pd.color(), pd.claims()));
                 }
             });
         });
@@ -75,8 +77,9 @@ public class DeathLockoutClient implements ClientModInitializer {
         // Starting X position to center everything
         int startX = centerX - (totalWidth / 2);
 
-        // Draw goal text at the top
-        String goalText = "Goal: " + clientGoal;
+        // Draw goal text at the top with mode
+        String modeText = clientMode.equals("DEATH") ? "Deaths" : "Kills";
+        String goalText = modeText + " Goal: " + clientGoal;
         int textWidth = client.font.width(goalText);
         graphics.drawString(client.font, goalText, centerX - (textWidth / 2), topY - 12, 0xFFFFFF, true);
 
@@ -94,15 +97,15 @@ public class DeathLockoutClient implements ClientModInitializer {
                 int x = currentX + (i * (slotSize + boxGap));
                 int y = topY;
 
-                if (i < player.deaths.size()) {
+                if (i < player.claims.size()) {
                     // CLAIMED: Draw colored background + icon
                     int bgColor = (player.color & 0xFFFFFF) | 0x80000000; // Semi-transparent version
                     graphics.fill(x, y, x + slotSize, y + slotSize, bgColor);
                     graphics.renderOutline(x, y, slotSize, slotSize, player.color | 0xFF000000); // Solid border
 
                     // Draw Icon
-                    String deathCause = player.deaths.get(i);
-                    ItemStack icon = getIconForDeath(deathCause);
+                    String claim = player.claims.get(i);
+                    ItemStack icon = getIconForClaim(claim);
                     graphics.renderItem(icon, x + 1, y + 1);
                 } else {
                     // EMPTY: Draw gray background
@@ -114,10 +117,22 @@ public class DeathLockoutClient implements ClientModInitializer {
         }
     }
 
-    // --- LOGIC: Convert Death String to Item ---
-    private ItemStack getIconForDeath(String cause) {
-        String lower = cause.toLowerCase();
+    // --- LOGIC: Convert Claim String to Item ---
+    private ItemStack getIconForClaim(String claim) {
+        String lower = claim.toLowerCase();
 
+        // For kills mode, try to match entity name directly first
+        if (clientMode.equals("KILLS")) {
+            for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE) {
+                String entityName = type.getDescription().getString();
+                if (entityName.equalsIgnoreCase(claim)) {
+                    SpawnEggItem egg = SpawnEggItem.byId(type);
+                    if (egg != null) return new ItemStack(egg);
+                }
+            }
+        }
+
+        // For death mode or fallback, check for keywords in the claim
         // 1. Environmental
         if (lower.contains("lava")) return new ItemStack(Items.LAVA_BUCKET);
         if (lower.contains("water") || lower.contains("drown")) return new ItemStack(Items.WATER_BUCKET);
@@ -136,7 +151,7 @@ public class DeathLockoutClient implements ClientModInitializer {
         if (lower.contains("freeze") || lower.contains("frozen")) return new ItemStack(Items.POWDER_SNOW_BUCKET);
         if (lower.contains("shriek")) return new ItemStack(Items.WARDEN_SPAWN_EGG);
 
-        // 2. Mobs
+        // 2. Mobs (for death messages containing mob names)
         for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE) {
             String entityName = type.getDescription().getString().toLowerCase();
             if (lower.contains(entityName)) {
@@ -146,6 +161,6 @@ public class DeathLockoutClient implements ClientModInitializer {
         }
 
         // 3. Fallback
-        return new ItemStack(Items.PLAYER_HEAD);
+        return new ItemStack(clientMode.equals("KILLS") ? Items.IRON_SWORD : Items.PLAYER_HEAD);
     }
 }

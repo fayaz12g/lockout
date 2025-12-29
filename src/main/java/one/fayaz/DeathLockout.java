@@ -9,6 +9,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,24 +52,51 @@ public class DeathLockout implements ModInitializer {
             }
         });
 
-        // 3. Register Commands
+        // 3. Register Kill Event (for kills mode)
+        ServerLivingEntityEvents.AFTER_DEATH.register((entity, damageSource) -> {
+            // Check if the killer is a player
+            if (damageSource.getEntity() instanceof ServerPlayer killer && !(entity instanceof ServerPlayer)) {
+                LockoutGame.INSTANCE.handleKill(killer, entity);
+            }
+        });
+
+        // 4. Register Commands
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             dispatcher.register(Commands.literal("lockout")
-                    // /lockout start
+                    // /lockout start <mode>
                     .then(Commands.literal("start")
-                            .executes(ctx -> {
-                                int canStart = LockoutGame.INSTANCE.canStart();
-                                if (canStart == -1) {
-                                    ctx.getSource().sendFailure(Component.literal("❌ Goal needs to be set above 0! Set it with /lockout goal <number>"));
-                                    return 0;
-                                }
-                                else if (canStart < 2) {
-                                    ctx.getSource().sendFailure(Component.literal("❌ Need at least " + (2 - canStart) + " more player(s) to start. Add them with /lockout add <player> <color>"));
-                                    return 0;
-                                }
-                                LockoutGame.INSTANCE.start(ctx.getSource().getServer());
-                                return 1;
-                            })
+                            .then(Commands.argument("mode", StringArgumentType.word())
+                                    .suggests((context, builder) -> {
+                                        builder.suggest("death");
+                                        builder.suggest("kills");
+                                        return builder.buildFuture();
+                                    })
+                                    .executes(ctx -> {
+                                        String modeStr = StringArgumentType.getString(ctx, "mode").toLowerCase();
+                                        LockoutGame.GameMode mode;
+
+                                        if (modeStr.equals("death")) {
+                                            mode = LockoutGame.GameMode.DEATH;
+                                        } else if (modeStr.equals("kills")) {
+                                            mode = LockoutGame.GameMode.KILLS;
+                                        } else {
+                                            ctx.getSource().sendFailure(Component.literal("❌ Invalid mode! Use 'death' or 'kills'"));
+                                            return 0;
+                                        }
+
+                                        int canStart = LockoutGame.INSTANCE.canStart();
+                                        if (canStart == -1) {
+                                            ctx.getSource().sendFailure(Component.literal("❌ Goal needs to be set above 0! Set it with /lockout goal <number>"));
+                                            return 0;
+                                        }
+                                        else if (canStart < 2) {
+                                            ctx.getSource().sendFailure(Component.literal("❌ Need at least " + (2 - canStart) + " more player(s) to start. Add them with /lockout add <player> <color>"));
+                                            return 0;
+                                        }
+                                        LockoutGame.INSTANCE.start(ctx.getSource().getServer(), mode);
+                                        return 1;
+                                    })
+                            )
                     )
                     // /lockout goal <num>
                     .then(Commands.literal("goal")
@@ -124,14 +152,16 @@ public class DeathLockout implements ModInitializer {
                                 int goal = LockoutGame.INSTANCE.getGoal();
                                 int playerCount = LockoutGame.INSTANCE.getPlayers().size();
                                 boolean active = LockoutGame.INSTANCE.isActive();
+                                String mode = LockoutGame.INSTANCE.getMode().toString();
 
                                 ctx.getSource().sendSystemMessage(Component.literal("--- Lockout Status ---"));
                                 ctx.getSource().sendSystemMessage(Component.literal("Active: " + (active ? "Yes" : "No")));
+                                ctx.getSource().sendSystemMessage(Component.literal("Mode: " + mode));
                                 ctx.getSource().sendSystemMessage(Component.literal("Goal: " + goal));
                                 ctx.getSource().sendSystemMessage(Component.literal("Players: " + playerCount));
 
                                 for (PlayerEntry entry : LockoutGame.INSTANCE.getPlayers().values()) {
-                                    ctx.getSource().sendSystemMessage(Component.literal("  - " + entry.getName() + " (" + entry.getScore() + " deaths)").withStyle(style -> style.withColor(entry.getColor())));
+                                    ctx.getSource().sendSystemMessage(Component.literal("  - " + entry.getName() + " (" + entry.getScore() + " claims)").withStyle(style -> style.withColor(entry.getColor())));
                                 }
 
                                 return 1;

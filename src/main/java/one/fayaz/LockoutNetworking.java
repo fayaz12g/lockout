@@ -20,20 +20,21 @@ public class LockoutNetworking {
     public static final CustomPacketPayload.Type<LockoutSyncPayload> SYNC_TYPE =
             new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath("deathlockout", "sync"));
 
-    public record PlayerData(UUID uuid, String name, int color, List<String> deaths) {
+    public record PlayerData(UUID uuid, String name, int color, List<String> claims) {
         public static final StreamCodec<RegistryFriendlyByteBuf, PlayerData> CODEC = StreamCodec.composite(
                 UUIDUtil.STREAM_CODEC, PlayerData::uuid,
                 ByteBufCodecs.STRING_UTF8, PlayerData::name,
                 ByteBufCodecs.INT, PlayerData::color,
-                ByteBufCodecs.collection(ArrayList::new, ByteBufCodecs.STRING_UTF8), PlayerData::deaths,
+                ByteBufCodecs.collection(ArrayList::new, ByteBufCodecs.STRING_UTF8), PlayerData::claims,
                 PlayerData::new
         );
     }
 
-    public record LockoutSyncPayload(int goal, List<PlayerData> players) implements CustomPacketPayload {
+    public record LockoutSyncPayload(int goal, List<PlayerData> players, String mode) implements CustomPacketPayload {
         public static final StreamCodec<RegistryFriendlyByteBuf, LockoutSyncPayload> CODEC = StreamCodec.composite(
                 ByteBufCodecs.INT, LockoutSyncPayload::goal,
                 ByteBufCodecs.collection(ArrayList::new, PlayerData.CODEC), LockoutSyncPayload::players,
+                ByteBufCodecs.STRING_UTF8, LockoutSyncPayload::mode,
                 LockoutSyncPayload::new
         );
 
@@ -47,7 +48,7 @@ public class LockoutNetworking {
         PayloadTypeRegistry.playS2C().register(SYNC_TYPE, LockoutSyncPayload.CODEC);
     }
 
-    public static void broadcastState(MinecraftServer server, int goal, List<PlayerEntry> playerEntries) {
+    public static void broadcastState(MinecraftServer server, int goal, List<PlayerEntry> playerEntries, LockoutGame.GameMode mode) {
         if (server == null) return;
 
         List<PlayerData> playerDataList = new ArrayList<>();
@@ -56,11 +57,11 @@ public class LockoutNetworking {
                     entry.getUuid(),
                     entry.getName(),
                     entry.getColor(),
-                    new ArrayList<>(entry.getDeaths())
+                    new ArrayList<>(entry.getClaims())
             ));
         }
 
-        LockoutSyncPayload payload = new LockoutSyncPayload(goal, playerDataList);
+        LockoutSyncPayload payload = new LockoutSyncPayload(goal, playerDataList, mode.toString());
 
         for (ServerPlayer player : PlayerLookup.all(server)) {
             ServerPlayNetworking.send(player, payload);
