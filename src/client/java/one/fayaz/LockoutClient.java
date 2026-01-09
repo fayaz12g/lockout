@@ -41,6 +41,9 @@ public class LockoutClient implements ClientModInitializer {
     // Track pause state for countdown
     private boolean wasPaused = false;
 
+    // Track if game has ended to prevent multiple victory sounds
+    private boolean gameEnded = false;
+
     // ================= PLAYER DATA =================
 
     public static class PlayerData {
@@ -95,6 +98,9 @@ public class LockoutClient implements ClientModInitializer {
                     // Play sounds for new goals
                     playSoundsForGoals(oldPlayers);
 
+                    // Check for game end (someone reached the goal)
+                    checkForGameEnd();
+
                     // Play countdown sound when game unpauses
                     if (wasJustUnpaused) {
                         playCountdownSound();
@@ -135,6 +141,30 @@ public class LockoutClient implements ClientModInitializer {
     }
 
     // ================= SOUND EFFECTS =================
+
+    private void checkForGameEnd() {
+        Minecraft client = Minecraft.getInstance();
+        if (client.player == null || client.level == null || gameEnded) return;
+
+        // Check if any player has reached the goal
+        for (PlayerData player : clientPlayers) {
+            if (player.claims.size() >= clientGoal && clientGoal > 0) {
+                // Game has ended! Play dramatic end portal sound
+                client.level.playLocalSound(
+                        client.player.getX(),
+                        client.player.getY(),
+                        client.player.getZ(),
+                        SoundEvents.END_PORTAL_SPAWN,
+                        SoundSource.PLAYERS,
+                        1.0F,
+                        1.0F,
+                        false
+                );
+                gameEnded = true;
+                break;
+            }
+        }
+    }
 
     private void playCountdownSound() {
         Minecraft client = Minecraft.getInstance();
@@ -198,7 +228,7 @@ public class LockoutClient implements ClientModInitializer {
                             client.player.getX(),
                             client.player.getY(),
                             client.player.getZ(),
-                            SoundEvents.APPLY_EFFECT_RAID_OMEN,
+                            SoundEvents.ENDERMAN_DEATH,
                             SoundSource.PLAYERS,
                             0.5F,
                             1.0F,
