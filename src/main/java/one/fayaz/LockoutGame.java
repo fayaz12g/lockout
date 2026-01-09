@@ -33,7 +33,8 @@ public class LockoutGame {
         KILLS,
         ARMOR,
         ADVANCEMENTS,
-        FOODS
+        FOODS,
+        MIXED
     }
 
     public enum DeathMatchMode {
@@ -185,6 +186,7 @@ public class LockoutGame {
             case ARMOR -> "Armor Sets";
             case ADVANCEMENTS -> "Advancements";
             case FOODS -> "Foods";
+            case MIXED -> "Mixed";
         };
 
         broadcastToServer(server, Component.literal("🎮 " + modeName + " Lockout Starting...").withStyle(style -> style.withColor(0xFFFF55).withBold(true)));
@@ -378,7 +380,7 @@ public class LockoutGame {
     }
 
     public void handleAdvancement(ServerPlayer player, AdvancementHolder advancement) {
-        if (!active || paused || isCountingDown || mode != GameMode.ADVANCEMENTS) return;
+        if (!active || paused || isCountingDown || (mode != GameMode.ADVANCEMENTS) && mode != GameMode.MIXED) return;
 
         UUID uuid = player.getUUID();
         PlayerEntry entry = players.get(uuid);
@@ -388,6 +390,7 @@ public class LockoutGame {
         System.out.println("[Advancement String] " + advancement.toString());
 
         if (claimedItems.contains(advancementKey)) {
+            player.sendSystemMessage(Component.literal("❌ Someone's already claimed that one!").withStyle(style -> style.withColor(0xFF5555)));
             return; // Already claimed
         }
 
@@ -407,7 +410,7 @@ public class LockoutGame {
     }
 
     public void handleFood(ServerPlayer player, ItemStack food) {
-        if (!active || paused || isCountingDown || mode != GameMode.FOODS) return;
+        if (!active || paused || isCountingDown || (mode != GameMode.FOODS) && mode != GameMode.MIXED) return;
 
         UUID uuid = player.getUUID();
         PlayerEntry entry = players.get(uuid);
@@ -596,7 +599,11 @@ public class LockoutGame {
     }
 
     public void handleDeath(ServerPlayer player, DamageSource source) {
-        if (!active || paused || isCountingDown || mode != GameMode.DEATH) return;
+        if (!active || paused || isCountingDown) return;
+        if (mode != GameMode.DEATH && mode != GameMode.MIXED) {
+            player.sendSystemMessage(Component.literal("❌ That's the wrong game mode!").withStyle(style -> style.withColor(0xFF5555)));
+            return;
+        }
 
         UUID uuid = player.getUUID();
         PlayerEntry entry = players.get(uuid);
@@ -651,7 +658,7 @@ public class LockoutGame {
     }
 
     public void handleKill(ServerPlayer player, LivingEntity killed) {
-        if (!active || paused || isCountingDown || mode != GameMode.KILLS) return;
+        if (!active || paused || isCountingDown || (mode != GameMode.KILLS) && mode != GameMode.MIXED) return;
 
         UUID uuid = player.getUUID();
         PlayerEntry entry = players.get(uuid);

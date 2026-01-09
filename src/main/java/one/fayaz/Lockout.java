@@ -144,10 +144,40 @@ public class Lockout implements ModInitializer {
                                     .executes(ctx -> {
                                         int goal = IntegerArgumentType.getInteger(ctx, "number");
                                         LockoutGame.INSTANCE.setGoal(goal);
-                                        ctx.getSource().sendSystemMessage(Component.literal("✓ Goal set to: " + goal).withStyle(style -> style.withColor(0x55FF55)));
+
+                                        Component msg = Component.literal("✓ Goal set to: " + goal).withStyle(style -> style.withColor(0x55FF55));
+                                        ctx.getSource()
+                                                .getServer()
+                                                .getPlayerList()
+                                                .broadcastSystemMessage(msg, false);
+
                                         return 1;
                                     })
                             )
+                    )
+                    // /lockout join
+                    .then(Commands.literal("join")
+                            .executes(ctx -> {
+                                if (!ctx.getSource().isPlayer()) {
+                                    ctx.getSource().sendFailure(
+                                            Component.literal("This command can only be run by a player.")
+                                    );
+                                    return 0;
+                                }
+                                ServerPlayer player = ctx.getSource().getPlayerOrException();
+
+                                int color = getNextAvailableColor();
+                                if (LockoutGame.INSTANCE.addPlayer(player, color)) {
+                                    Component msg = Component.literal("✓ Added " + player.getName().getString())
+                                            .withStyle(style -> style.withColor(color));
+
+                                    ctx.getSource()
+                                            .getServer()
+                                            .getPlayerList()
+                                            .broadcastSystemMessage(msg, false);
+                                }
+                                return 1;
+                            })
                     )
                     // /lockout stop
                     .then(Commands.literal("stop")
@@ -197,7 +227,24 @@ public class Lockout implements ModInitializer {
                             .then(Commands.literal("kills")
                                     .executes(ctx -> {
                                         LockoutGame.INSTANCE.setMode(LockoutGame.GameMode.KILLS);
-                                        ctx.getSource().sendSystemMessage(Component.literal("✓ Mode set to: KILLS").withStyle(style -> style.withColor(0x55FF55)));
+                                        Component msg = Component.literal("✓ Mode set to: KILLS").withStyle(style -> style.withColor(0x55FF55));
+
+                                        ctx.getSource()
+                                                .getServer()
+                                                .getPlayerList()
+                                                .broadcastSystemMessage(msg, false);
+                                        return 1;
+                                    })
+                            )
+                            .then(Commands.literal("mixed")
+                                    .executes(ctx -> {
+                                        LockoutGame.INSTANCE.setMode(LockoutGame.GameMode.MIXED);
+                                        Component msg = Component.literal("✓ Mode set to: MIXED").withStyle(style -> style.withColor(0x55FF55));
+
+                                        ctx.getSource()
+                                                .getServer()
+                                                .getPlayerList()
+                                                .broadcastSystemMessage(msg, false);
                                         return 1;
                                     })
                             )
@@ -214,10 +261,19 @@ public class Lockout implements ModInitializer {
 
                                                 if (submodeStr.equals("set")) {
                                                     matchMode = LockoutGame.ArmorMode.SET;
-                                                    ctx.getSource().sendSystemMessage(Component.literal("✓ Mode set to: ARMOR (SET)").withStyle(style -> style.withColor(0x55FF55)));
+                                                    Component msg = Component.literal("✓ Mode set to: ARMOR (SET)").withStyle(style -> style.withColor(0x55FF55));
+
+                                                    ctx.getSource()
+                                                            .getServer()
+                                                            .getPlayerList()
+                                                            .broadcastSystemMessage(msg, false);
                                                 } else if (submodeStr.equals("piece")) {
                                                     matchMode = LockoutGame.ArmorMode.PIECE;
-                                                    ctx.getSource().sendSystemMessage(Component.literal("✓ Mode set to: ARMOR (PIECE)").withStyle(style -> style.withColor(0x55FF55)));
+                                                    Component msg = Component.literal("✓ Mode set to: ARMOR (PIECE)").withStyle(style -> style.withColor(0x55FF55));
+                                                    ctx.getSource()
+                                                            .getServer()
+                                                            .getPlayerList()
+                                                            .broadcastSystemMessage(msg, false);
                                                 } else {
                                                     ctx.getSource().sendFailure(Component.literal("❌ Invalid submode! Use 'set' or 'piece'"));
                                                     return 0;
@@ -232,14 +288,24 @@ public class Lockout implements ModInitializer {
                             .then(Commands.literal("advancements")
                                     .executes(ctx -> {
                                         LockoutGame.INSTANCE.setMode(LockoutGame.GameMode.ADVANCEMENTS);
-                                        ctx.getSource().sendSystemMessage(Component.literal("✓ Mode set to: ADVANCEMENTS").withStyle(style -> style.withColor(0x55FF55)));
+                                        Component msg = Component.literal("✓ Mode set to: ADVANCEMENTS").withStyle(style -> style.withColor(0x55FF55));
+
+                                        ctx.getSource()
+                                                .getServer()
+                                                .getPlayerList()
+                                                .broadcastSystemMessage(msg, false);
                                         return 1;
                                     })
                             )
                             .then(Commands.literal("foods")
                                     .executes(ctx -> {
                                         LockoutGame.INSTANCE.setMode(LockoutGame.GameMode.FOODS);
-                                        ctx.getSource().sendSystemMessage(Component.literal("✓ Mode set to: FOODS").withStyle(style -> style.withColor(0x55FF55)));
+                                        Component msg = Component.literal("✓ Mode set to: FOODS").withStyle(style -> style.withColor(0x55FF55));
+
+                                        ctx.getSource()
+                                                .getServer()
+                                                .getPlayerList()
+                                                .broadcastSystemMessage(msg, false);
                                         return 1;
                                     })
                             )
@@ -256,10 +322,20 @@ public class Lockout implements ModInitializer {
 
                                                 if (submodeStr.equals("source")) {
                                                     matchMode = LockoutGame.DeathMatchMode.SOURCE;
-                                                    ctx.getSource().sendSystemMessage(Component.literal("✓ Mode set to: DEATH (SOURCE)").withStyle(style -> style.withColor(0x55FF55)));
+                                                    Component msg = Component.literal("✓ Mode set to: DEATH (SOURCE)").withStyle(style -> style.withColor(0x55FF55));
+
+                                                    ctx.getSource()
+                                                            .getServer()
+                                                            .getPlayerList()
+                                                            .broadcastSystemMessage(msg, false);
                                                 } else if (submodeStr.equals("message")) {
                                                     matchMode = LockoutGame.DeathMatchMode.MESSAGE;
-                                                    ctx.getSource().sendSystemMessage(Component.literal("✓ Mode set to: DEATH (MESSAGE)").withStyle(style -> style.withColor(0x55FF55)));
+                                                    Component msg = Component.literal("✓ Mode set to: DEATH (MESSAGE)").withStyle(style -> style.withColor(0x55FF55));
+
+                                                    ctx.getSource()
+                                                            .getServer()
+                                                            .getPlayerList()
+                                                            .broadcastSystemMessage(msg, false);
                                                 } else {
                                                     ctx.getSource().sendFailure(Component.literal("❌ Invalid submode! Use 'source' or 'message'"));
                                                     return 0;

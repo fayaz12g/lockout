@@ -227,6 +227,7 @@ public class LockoutClient implements ClientModInitializer {
             if (lower.contains("adventure/heart_transplanter")) return new ItemStack(Blocks.CREAKING_HEART);
             if (lower.contains("adventure/adventuring_time")) return new ItemStack(Items.DIAMOND_BOOTS);
             if (lower.contains("adventure/kill_all_mobs")) return new ItemStack(Items.DIAMOND_SWORD);
+            if (lower.contains("adventure/kill_a_mob")) return new ItemStack(Items.IRON_SWORD);
 
             // Husbandry advancements
             if (lower.contains("husbandry/root")) return new ItemStack(Blocks.HAY_BLOCK);
