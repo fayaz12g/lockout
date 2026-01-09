@@ -154,8 +154,7 @@ public class LockoutGame {
         if (goal < 1) {
             return -1;
         }
-//        return players.size();
-        return 2;
+        return players.size();
     }
 
     public void start(MinecraftServer server, GameMode mode) {

@@ -198,7 +198,7 @@ public class LockoutClient implements ClientModInitializer {
                             client.player.getX(),
                             client.player.getY(),
                             client.player.getZ(),
-                            SoundEvents.VILLAGER_NO,
+                            SoundEvents.APPLY_EFFECT_RAID_OMEN,
                             SoundSource.PLAYERS,
                             0.5F,
                             1.0F,
