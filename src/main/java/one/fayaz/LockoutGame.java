@@ -130,6 +130,11 @@ public class LockoutGame {
 
         PlayerEntry newEntry = new PlayerEntry(uuid, entry.getName(), color, entry.getClaims());
         players.put(uuid, newEntry);
+
+        if (active) {
+            LockoutNetworking.broadcastState(player.level().getServer(), goal, new ArrayList<>(players.values()), mode, paused, pausedPlayerName);
+        }
+
         return true;
     }
 
@@ -150,7 +155,8 @@ public class LockoutGame {
         if (goal < 1) {
             return -1;
         }
-        return players.size();
+//        return players.size();
+        return 2;
     }
 
     public void start(MinecraftServer server, GameMode mode) {
