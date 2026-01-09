@@ -38,6 +38,9 @@ public class LockoutClient implements ClientModInitializer {
     // Track previous claim counts to detect new goals
     private final List<Integer> previousClaimCounts = new ArrayList<>();
 
+    // Track pause state for countdown
+    private boolean wasPaused = false;
+
     // ================= PLAYER DATA =================
 
     public static class PlayerData {
@@ -74,6 +77,10 @@ public class LockoutClient implements ClientModInitializer {
                 (payload, context) -> context.client().execute(() -> {
                     clientGoal = payload.goal();
                     clientMode = payload.mode();
+
+                    // Detect unpause (game start/resume)
+                    boolean wasJustUnpaused = wasPaused && !payload.paused();
+
                     clientPaused = payload.paused();
                     clientPausedPlayerName = payload.pausedPlayerName();
 
@@ -87,6 +94,14 @@ public class LockoutClient implements ClientModInitializer {
 
                     // Play sounds for new goals
                     playSoundsForGoals(oldPlayers);
+
+                    // Play countdown sound when game unpauses
+                    if (wasJustUnpaused) {
+                        playCountdownSound();
+                    }
+
+                    // Update pause tracking
+                    wasPaused = payload.paused();
                 })
         );
 
@@ -120,6 +135,23 @@ public class LockoutClient implements ClientModInitializer {
     }
 
     // ================= SOUND EFFECTS =================
+
+    private void playCountdownSound() {
+        Minecraft client = Minecraft.getInstance();
+        if (client.player == null || client.level == null) return;
+
+        // Play an exciting countdown/start sound
+        client.level.playLocalSound(
+                client.player.getX(),
+                client.player.getY(),
+                client.player.getZ(),
+                SoundEvents.NOTE_BLOCK_BELL.value(),
+                SoundSource.PLAYERS,
+                1.0F,
+                2.0F, // Higher pitch for excitement
+                false
+        );
+    }
 
     private void playSoundsForGoals(List<PlayerData> oldPlayers) {
         Minecraft client = Minecraft.getInstance();
