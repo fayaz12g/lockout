@@ -321,7 +321,15 @@ public class LockoutClient implements ClientModInitializer {
                         victoryBoxY + victoryBoxSize - 1,
                         winTint
                 );
-                graphics.renderItem(winningIcon, victoryBoxX + 3, victoryBoxY + 3);
+
+                // Render the winning item scaled up to fit the larger victory box
+                // Victory box is 28x28, with 1px border = 26x26 inner area
+                // We want to center a 24x24 item (leaving 1px padding on each side)
+                graphics.pose().pushMatrix();
+                graphics.pose().translate(victoryBoxX + 2, victoryBoxY + 2);
+                graphics.pose().scale(1.5F, 1.5F); // Scale from 16x16 to 24x24
+                graphics.renderItem(winningIcon, 0, 0);
+                graphics.pose().popMatrix();
                 break;
             }
         }
