@@ -20,7 +20,7 @@ public class PlayerAdvancementsMixin {
 	private void onAdvancementAwarded(AdvancementHolder advancement, String criterionKey, CallbackInfoReturnable<Boolean> cir) {
 		if (cir.getReturnValue()) {
 			String advancementId = advancement.id().toString();
-			if (!advancementId.contains("recipes")) {
+			if (!advancementId.contains("recipes") && !advancementId.contains("root")) {
 				// Check if the advancement is now fully completed
 				PlayerAdvancements advancements = (PlayerAdvancements) (Object) this;
 				AdvancementProgress progress = advancements.getOrStartProgress(advancement);

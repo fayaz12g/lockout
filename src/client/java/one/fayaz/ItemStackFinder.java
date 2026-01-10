@@ -14,30 +14,26 @@ public class ItemStackFinder {
     public static ItemStack getIconForClaim(String claim) {
         String lower = claim.toLowerCase();
 
-        // Armor mode - show chestplate
-        if (clientMode.equals("ARMOR")) {
-            return one.fayaz.client.ArmorIconRegistry.get(lower);
-        }
+        String mode = clientMode;
 
-        // Advancements mode - show relevant icon
-        if (clientMode.equals("ADVANCEMENTS")) {
-            Identifier id = Identifier.tryParse(claim);
-            return AdvancementIconRegistry.get(id);
+        if(mode.equals("MIXED")) {
+            if (lower.contains("minecraft:")) {
+                mode = "ADVANCEMENTS";
+            }
         }
 
         // Foods mode - try to parse the item directly
-        if (clientMode.equals("FOODS")) {
+        if (mode.equals("FOODS") || mode.equals("MIXED")) {
             // Try to find the item from registry
             var item = BuiltInRegistries.ITEM.stream()
                     .filter(i -> i.toString().equals(claim))
                     .findFirst()
                     .orElse(null);
             if (item != null) return new ItemStack(item);
-            return new ItemStack(Items.APPLE); // Fallback
         }
 
         // Kills mode
-        if (clientMode.equals("KILLS")) {
+        if (mode.equals("KILLS") || mode.equals("MIXED")) {
             for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE) {
                 String entityName = type.getDescription().getString();
                 if (entityName.equalsIgnoreCase(claim)) {
@@ -48,9 +44,21 @@ public class ItemStackFinder {
         }
 
         // Death mode - check for keywords
-        if (clientMode.equals("DEATH")) {
+        if (mode.equals("DEATH") || mode.equals("MIXED")) {
             return DeathIconRegistry.get(lower);
         }
+
+        // Armor mode - show chestplate
+        if (mode.equals("ARMOR")) {
+            return one.fayaz.client.ArmorIconRegistry.get(lower);
+        }
+
+        // Advancements mode - show relevant icon
+        if (mode.equals("ADVANCEMENTS")) {
+            Identifier id = Identifier.tryParse(claim);
+            return AdvancementIconRegistry.get(id);
+        }
+
         // Final Fallback
         return new ItemStack(Items.BARRIER);
     }

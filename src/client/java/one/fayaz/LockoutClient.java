@@ -8,6 +8,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -333,7 +334,7 @@ public class LockoutClient implements ClientModInitializer {
                 ItemStack winningIcon = player.icons.get(player.icons.size() - 1);
 
                 // Add winning player's color glow
-                int winTint = (player.color & 0xFFFFFF) | 0x88_000000;
+                int winTint = (player.color & 0xFFFFFF) | 0xFFFFFF;
                 graphics.fill(
                         victoryBoxX + 1,
                         victoryBoxY + 1,
@@ -343,11 +344,9 @@ public class LockoutClient implements ClientModInitializer {
                 );
 
                 // Render the winning item scaled up to fit the larger victory box
-                // Victory box is 28x28, with 1px border = 26x26 inner area
-                // We want to center a 24x24 item (leaving 1px padding on each side)
                 graphics.pose().pushMatrix();
                 graphics.pose().translate(victoryBoxX + 2, victoryBoxY + 2);
-                graphics.pose().scale(1.5F, 1.5F); // Scale from 16x16 to 24x24
+                graphics.pose().scale(1.5F, 1.5F);
                 graphics.renderItem(winningIcon, 0, 0);
                 graphics.pose().popMatrix();
                 break;
@@ -356,21 +355,14 @@ public class LockoutClient implements ClientModInitializer {
     }
 
     private void renderSlotBackground(GuiGraphics graphics, int x, int y, int size, int tint, boolean isClaimed) {
-        // Dark slot background
-        graphics.fill(x, y, x + size, y + size, 0xFF_000000);
+        // Use the vanilla container slot sprite
+        Identifier slotSprite = Identifier.withDefaultNamespace("container/slot");
 
-        // Border - brighter if claimed, darker if not
-        int borderBright = isClaimed ? 0xFF_FFFFFF : 0xFF_8B8B8B;
-        int borderDark = isClaimed ? 0xFF_555555 : 0xFF_373737;
+        // Render the slot background using the sprite with proper alpha blending and white color
+        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, slotSprite, x, y, size, size, 0xFFFFFFFF);
 
-        graphics.fill(x, y, x + size, y + 1, borderBright); // Top
-        graphics.fill(x, y, x + 1, y + size, borderBright); // Left
-        graphics.fill(x + size - 1, y, x + size, y + size, borderDark); // Right
-        graphics.fill(x, y + size - 1, x + size, y + size, borderDark); // Bottom
-
-        // Inner background with tint only if claimed
+        // Add colored tint overlay only if claimed
         if (isClaimed) {
-            // Use lighter tint (88 instead of 55) for better visibility
             graphics.fill(x + 1, y + 1, x + size - 1, y + size - 1, tint);
         }
     }
