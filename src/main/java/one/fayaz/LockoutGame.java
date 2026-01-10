@@ -441,6 +441,10 @@ public class LockoutGame {
         }
     }
 
+    private void finishPlayer(ServerPlayer player) {
+        player.setGameMode(GameType.SPECTATOR);
+    }
+
     private void preparePlayer(ServerPlayer player) {
         player.getInventory().clearContent();
         player.setHealth(player.getMaxHealth());
@@ -585,6 +589,7 @@ public class LockoutGame {
                 ServerPlayer player = server.getPlayerList().getPlayer(uuid);
                 if (player != null) {
                     unfreezePlayer(player);
+                    finishPlayer(player);
                 }
             }
         }
