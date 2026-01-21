@@ -1,9 +1,7 @@
 package one.fayaz;
 
-import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.SpawnEggItem;
@@ -11,7 +9,6 @@ import net.minecraft.world.item.SpawnEggItem;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 public final class DeathIconRegistry {
 
@@ -55,15 +52,10 @@ public final class DeathIconRegistry {
         for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE) {
             String entityName = type.getDescription().getString().toLowerCase();
             if (lower.contains(entityName)) {
-
-                Optional<Holder<Item>> eggHolderOpt = SpawnEggItem.byId(type);
-                if (eggHolderOpt.isPresent()) {
-                    Item item = eggHolderOpt.get().value();
-                    if (item instanceof SpawnEggItem) {
-                        return new ItemStack(item);
-                    }
+                SpawnEggItem egg = SpawnEggItem.byId(type);
+                if (egg != null) {
+                    return new ItemStack(egg);
                 }
-
             }
         }
 

@@ -14,7 +14,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.ItemStack;
 import org.lwjgl.glfw.GLFW;
-import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -166,7 +166,7 @@ public class LockoutClient implements ClientModInitializer {
                 LOCKOUT_CATEGORY
         );
 
-        KeyMappingHelper.registerKeyMapping(OPEN_UI_KEY);
+        KeyBindingHelper.registerKeyBinding(OPEN_UI_KEY);
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (OPEN_UI_KEY.consumeClick()) {

@@ -71,8 +71,7 @@ public class LockoutNetworking {
     }
 
     public static void registerCommon() {
-        PayloadTypeRegistry.clientboundPlay()
-                .register(SYNC_TYPE, LockoutSyncPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(SYNC_TYPE, LockoutSyncPayload.CODEC);
     }
 
     public static void sendToPlayer(

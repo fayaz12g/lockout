@@ -33,15 +33,8 @@ public class ItemStackFinder {
             for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE) {
                 String entityName = type.getDescription().getString();
                 if (entityName.equalsIgnoreCase(claim)) {
-
-                    Optional<Holder<Item>> eggHolderOpt = SpawnEggItem.byId(type);
-                    if (eggHolderOpt.isPresent()) {
-                        Item item = eggHolderOpt.get().value();
-                        if (item instanceof SpawnEggItem) {
-                            return new ItemStack(item);
-                        }
-                    }
-
+                    SpawnEggItem egg = SpawnEggItem.byId(type);
+                    if (egg != null) return new ItemStack(egg);
                 }
             }
         }
