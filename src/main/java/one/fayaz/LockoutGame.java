@@ -49,6 +49,26 @@ public class LockoutGame {
         PIECE
     }
 
+    private Set<GameMode> mixedModes = new HashSet<>(Arrays.asList(
+            GameMode.DEATH,
+            GameMode.KILLS,
+            GameMode.ARMOR,
+            GameMode.ADVANCEMENTS,
+            GameMode.FOODS,
+            GameMode.BREED
+    ));
+
+    public boolean addMixedMode(GameMode mode) {
+        return mixedModes.add(mode);
+    }
+
+    public boolean removeMixedMode(GameMode mode) {
+        return mixedModes.remove(mode);
+    }
+
+    public Set<GameMode> getMixedModes() {
+        return new HashSet<>(mixedModes);
+    }
     private boolean active = false;
     private boolean paused = false;
     private String pausedPlayerName = "";
@@ -349,7 +369,7 @@ public class LockoutGame {
             return;
         }
         // Check armor every 20 ticks (1 second) if in armor mode
-        if (active && !paused && mode == GameMode.ARMOR) {
+        if (active && !paused && (mode == GameMode.ARMOR || (mode == GameMode.MIXED && mixedModes.contains(GameMode.ARMOR)))) {
             armorCheckTicks++;
             if (armorCheckTicks >= 20) {
                 armorCheckTicks = 0;
@@ -514,7 +534,11 @@ public class LockoutGame {
     }
 
     public void handleBreed(ServerPlayer player, Animal animal) {
-        if (!active || paused || isCountingDown || (mode != GameMode.BREED && mode != GameMode.MIXED)) return;
+        if (!active || paused || isCountingDown ||
+                (mode != GameMode.BREED && mode != GameMode.MIXED) ||
+                (mode == GameMode.MIXED && !mixedModes.contains(GameMode.BREED))) {
+            return;
+        }
 
         UUID uuid = player.getUUID();
         PlayerEntry entry = players.get(uuid);
@@ -547,7 +571,12 @@ public class LockoutGame {
     }
 
     public void handleAdvancement(ServerPlayer player, AdvancementHolder advancement) {
-        if (!active || paused || isCountingDown || (mode != GameMode.ADVANCEMENTS) && mode != GameMode.MIXED) return;
+        if (!active || paused || isCountingDown ||
+                (mode != GameMode.ADVANCEMENTS && mode != GameMode.MIXED) ||
+                (mode == GameMode.MIXED && !mixedModes.contains(GameMode.ADVANCEMENTS))) {
+            return;
+        }
+
 
         UUID uuid = player.getUUID();
         PlayerEntry entry = players.get(uuid);
@@ -579,7 +608,11 @@ public class LockoutGame {
     }
 
     public void handleFood(ServerPlayer player, ItemStack food) {
-        if (!active || paused || isCountingDown || (mode != GameMode.FOODS) && mode != GameMode.MIXED) return;
+        if (!active || paused || isCountingDown ||
+                (mode != GameMode.FOODS && mode != GameMode.MIXED) ||
+                (mode == GameMode.MIXED && !mixedModes.contains(GameMode.FOODS))) {
+            return;
+        }
 
         UUID uuid = player.getUUID();
         PlayerEntry entry = players.get(uuid);
@@ -777,7 +810,7 @@ public class LockoutGame {
 
     public void handleDeath(ServerPlayer player, DamageSource source) {
         if (!active || paused || isCountingDown) return;
-        if (mode != GameMode.DEATH && mode != GameMode.MIXED) {
+        if ((mode != GameMode.DEATH && mode != GameMode.MIXED) || (mode == GameMode.MIXED && !mixedModes.contains(GameMode.DEATH))) {
             player.sendSystemMessage(Component.literal("❌ That's the wrong game mode!").withStyle(style -> style.withColor(0xFF5555)));
             return;
         }
@@ -838,7 +871,11 @@ public class LockoutGame {
     }
 
     public void handleKill(ServerPlayer player, LivingEntity killed) {
-        if (!active || paused || isCountingDown || (mode != GameMode.KILLS) && mode != GameMode.MIXED) return;
+        if (!active || paused || isCountingDown ||
+                (mode != GameMode.KILLS && mode != GameMode.MIXED) ||
+                (mode == GameMode.MIXED && !mixedModes.contains(GameMode.KILLS))) {
+            return;
+        }
 
         UUID uuid = player.getUUID();
         PlayerEntry entry = players.get(uuid);

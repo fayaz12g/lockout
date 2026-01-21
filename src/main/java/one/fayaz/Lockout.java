@@ -144,40 +144,6 @@ public class Lockout implements ModInitializer {
                                 return 1;
                             })
                     )
-                    // /lockout goal <num>
-                    .then(Commands.literal("goal")
-                            .then(Commands.argument("number", IntegerArgumentType.integer(1))
-                                    .executes(ctx -> {
-                                        int goal = IntegerArgumentType.getInteger(ctx, "number");
-                                        LockoutGame.INSTANCE.setGoal(goal);
-
-                                        Component msg = Component.literal("✓ Goal set to: " + goal).withStyle(style -> style.withColor(0x55FF55));
-                                        ctx.getSource()
-                                                .getServer()
-                                                .getPlayerList()
-                                                .broadcastSystemMessage(msg, false);
-
-                                        return 1;
-                                    })
-                            )
-                    )
-                    // /lockout switch <bool>
-                    .then(Commands.literal("switch")
-                            .then(Commands.argument("boolean", BoolArgumentType.bool())
-                                    .executes(ctx -> {
-                                        boolean doSwitch = BoolArgumentType.getBool(ctx, "boolean");
-                                        LockoutGame.INSTANCE.setDoSwitch(doSwitch);
-
-                                        Component msg = Component.literal("✓ Switching mode set to: " + doSwitch).withStyle(style -> style.withColor(0x55FF55));
-                                        ctx.getSource()
-                                                .getServer()
-                                                .getPlayerList()
-                                                .broadcastSystemMessage(msg, false);
-
-                                        return 1;
-                                    })
-                            )
-                    )
                     // /lockout join
                     .then(Commands.literal("join")
                             .executes(ctx -> {
@@ -245,143 +211,265 @@ public class Lockout implements ModInitializer {
                                 return 1;
                             })
                     )
-                    // /lockout mode
-                    .then(Commands.literal("mode")
-                            .then(Commands.literal("kills")
-                                    .executes(ctx -> {
-                                        LockoutGame.INSTANCE.setMode(LockoutGame.GameMode.KILLS);
-                                        Component msg = Component.literal("✓ Mode set to: KILLS").withStyle(style -> style.withColor(0x55FF55));
+                    // /lockout configure
+                    .then(Commands.literal("configure")
+                        // /lockout goal <num>
+                        .then(Commands.literal("goal")
+                                .then(Commands.argument("number", IntegerArgumentType.integer(1))
+                                        .executes(ctx -> {
+                                            int goal = IntegerArgumentType.getInteger(ctx, "number");
+                                            LockoutGame.INSTANCE.setGoal(goal);
 
-                                        ctx.getSource()
-                                                .getServer()
-                                                .getPlayerList()
-                                                .broadcastSystemMessage(msg, false);
-                                        return 1;
-                                    })
-                            )
-                            .then(Commands.literal("breed")
-                                    .executes(ctx -> {
-                                        LockoutGame.INSTANCE.setMode(LockoutGame.GameMode.BREED);
-                                        Component msg = Component.literal("✓ Mode set to: BREED").withStyle(style -> style.withColor(0x55FF55));
+                                            Component msg = Component.literal("✓ Goal set to: " + goal).withStyle(style -> style.withColor(0x55FF55));
+                                            ctx.getSource()
+                                                    .getServer()
+                                                    .getPlayerList()
+                                                    .broadcastSystemMessage(msg, false);
 
-                                        ctx.getSource()
-                                                .getServer()
-                                                .getPlayerList()
-                                                .broadcastSystemMessage(msg, false);
-                                        return 1;
-                                    })
-                            )
-                            .then(Commands.literal("mixed")
-                                    .executes(ctx -> {
-                                        LockoutGame.INSTANCE.setMode(LockoutGame.GameMode.MIXED);
-                                        Component msg = Component.literal("✓ Mode set to: MIXED").withStyle(style -> style.withColor(0x55FF55));
+                                            return 1;
+                                        })
+                                )
+                        )
+                        // /lockout configure switch <bool>
+                        .then(Commands.literal("switch")
+                                .then(Commands.argument("boolean", BoolArgumentType.bool())
+                                        .executes(ctx -> {
+                                            boolean doSwitch = BoolArgumentType.getBool(ctx, "boolean");
+                                            LockoutGame.INSTANCE.setDoSwitch(doSwitch);
 
-                                        ctx.getSource()
-                                                .getServer()
-                                                .getPlayerList()
-                                                .broadcastSystemMessage(msg, false);
-                                        return 1;
-                                    })
-                            )
-                            .then(Commands.literal("armor")
-                                    .then(Commands.argument("submode", StringArgumentType.word())
-                                            .suggests((context, builder) -> {
-                                                builder.suggest("set");
-                                                builder.suggest("piece");
-                                                return builder.buildFuture();
-                                            })
-                                            .executes(ctx -> {
-                                                String submodeStr = StringArgumentType.getString(ctx, "submode").toLowerCase();
-                                                LockoutGame.ArmorMode matchMode;
+                                            Component msg = Component.literal("✓ Switching mode set to: " + doSwitch).withStyle(style -> style.withColor(0x55FF55));
+                                            ctx.getSource()
+                                                    .getServer()
+                                                    .getPlayerList()
+                                                    .broadcastSystemMessage(msg, false);
 
-                                                if (submodeStr.equals("set")) {
-                                                    matchMode = LockoutGame.ArmorMode.SET;
-                                                    Component msg = Component.literal("✓ Mode set to: ARMOR (SET)").withStyle(style -> style.withColor(0x55FF55));
+                                            return 1;
+                                        })
+                                )
+                        )
+                        // /lockout configure mixed include
+                        .then(Commands.literal("mixed")
+                                // /lockout configure mixed include
+                                .then(Commands.literal("include")
+                                        .then(Commands.argument("gamemode", StringArgumentType.word())
+                                                .suggests((ctx, builder) -> {
+                                                    for (LockoutGame.GameMode mode : LockoutGame.GameMode.values()) {
+                                                        if (mode != LockoutGame.GameMode.MIXED) {
+                                                            builder.suggest(mode.name().toLowerCase());
+                                                        }
+                                                    }
+                                                    return builder.buildFuture();
+                                                })
+                                                .executes(ctx -> {
+                                                    String modeName = StringArgumentType.getString(ctx, "gamemode").toUpperCase();
+                                                    try {
+                                                        LockoutGame.GameMode mode = LockoutGame.GameMode.valueOf(modeName);
+                                                        if (mode == LockoutGame.GameMode.MIXED) {
+                                                            ctx.getSource().sendFailure(Component.literal("Cannot include MIXED mode in mixed mode"));
+                                                            return 0;
+                                                        }
 
-                                                    ctx.getSource()
-                                                            .getServer()
-                                                            .getPlayerList()
-                                                            .broadcastSystemMessage(msg, false);
-                                                } else if (submodeStr.equals("piece")) {
-                                                    matchMode = LockoutGame.ArmorMode.PIECE;
-                                                    Component msg = Component.literal("✓ Mode set to: ARMOR (PIECE)").withStyle(style -> style.withColor(0x55FF55));
-                                                    ctx.getSource()
-                                                            .getServer()
-                                                            .getPlayerList()
-                                                            .broadcastSystemMessage(msg, false);
-                                                } else {
-                                                    ctx.getSource().sendFailure(Component.literal("❌ Invalid submode! Use 'set' or 'piece'"));
-                                                    return 0;
-                                                }
+                                                        boolean added = LockoutGame.INSTANCE.addMixedMode(mode);
+                                                        Component msg;
+                                                        if (added) {
+                                                            msg = Component.literal("✓ Added " + mode.name() + " to mixed mode").withStyle(style -> style.withColor(0x55FF55));
+                                                        } else {
+                                                            msg = Component.literal("⚠ " + mode.name() + " is already in mixed mode").withStyle(style -> style.withColor(0xFFAA00));
+                                                        }
 
-                                                LockoutGame.INSTANCE.setMode(LockoutGame.GameMode.ARMOR);
-                                                LockoutGame.INSTANCE.setArmorMode(matchMode);
-                                                return 1;
-                                            })
-                                    )
-                            )
-                            .then(Commands.literal("advancements")
-                                    .executes(ctx -> {
-                                        LockoutGame.INSTANCE.setMode(LockoutGame.GameMode.ADVANCEMENTS);
-                                        Component msg = Component.literal("✓ Mode set to: ADVANCEMENTS").withStyle(style -> style.withColor(0x55FF55));
+                                                        ctx.getSource()
+                                                                .getServer()
+                                                                .getPlayerList()
+                                                                .broadcastSystemMessage(msg, false);
 
-                                        ctx.getSource()
-                                                .getServer()
-                                                .getPlayerList()
-                                                .broadcastSystemMessage(msg, false);
-                                        return 1;
-                                    })
-                            )
-                            .then(Commands.literal("foods")
-                                    .executes(ctx -> {
-                                        LockoutGame.INSTANCE.setMode(LockoutGame.GameMode.FOODS);
-                                        Component msg = Component.literal("✓ Mode set to: FOODS").withStyle(style -> style.withColor(0x55FF55));
+                                                        return 1;
+                                                    } catch (IllegalArgumentException e) {
+                                                        ctx.getSource().sendFailure(Component.literal("Invalid game mode: " + modeName));
+                                                        return 0;
+                                                    }
+                                                })
+                                        )
+                                )
+                                // /lockout configure mixed exclude
+                                .then(Commands.literal("exclude")
+                                        .then(Commands.argument("gamemode", StringArgumentType.word())
+                                                .suggests((ctx, builder) -> {
+                                                    for (LockoutGame.GameMode mode : LockoutGame.GameMode.values()) {
+                                                        if (mode != LockoutGame.GameMode.MIXED) {
+                                                            builder.suggest(mode.name().toLowerCase());
+                                                        }
+                                                    }
+                                                    return builder.buildFuture();
+                                                })
+                                                .executes(ctx -> {
+                                                    String modeName = StringArgumentType.getString(ctx, "gamemode").toUpperCase();
+                                                    try {
+                                                        LockoutGame.GameMode mode = LockoutGame.GameMode.valueOf(modeName);
+                                                        if (mode == LockoutGame.GameMode.MIXED) {
+                                                            ctx.getSource().sendFailure(Component.literal("Cannot exclude MIXED mode from mixed mode"));
+                                                            return 0;
+                                                        }
 
-                                        ctx.getSource()
-                                                .getServer()
-                                                .getPlayerList()
-                                                .broadcastSystemMessage(msg, false);
-                                        return 1;
-                                    })
-                            )
-                            .then(Commands.literal("death")
-                                    .then(Commands.argument("submode", StringArgumentType.word())
-                                            .suggests((context, builder) -> {
-                                                builder.suggest("source");
-                                                builder.suggest("message");
-                                                return builder.buildFuture();
-                                            })
-                                            .executes(ctx -> {
-                                                String submodeStr = StringArgumentType.getString(ctx, "submode").toLowerCase();
-                                                LockoutGame.DeathMatchMode matchMode;
+                                                        boolean removed = LockoutGame.INSTANCE.removeMixedMode(mode);
+                                                        Component msg;
+                                                        if (removed) {
+                                                            msg = Component.literal("✓ Removed " + mode.name() + " from mixed mode").withStyle(style -> style.withColor(0x55FF55));
+                                                        } else {
+                                                            msg = Component.literal("⚠ " + mode.name() + " is not in mixed mode").withStyle(style -> style.withColor(0xFFAA00));
+                                                        }
 
-                                                if (submodeStr.equals("source")) {
-                                                    matchMode = LockoutGame.DeathMatchMode.SOURCE;
-                                                    Component msg = Component.literal("✓ Mode set to: DEATH (SOURCE)").withStyle(style -> style.withColor(0x55FF55));
+                                                        ctx.getSource()
+                                                                .getServer()
+                                                                .getPlayerList()
+                                                                .broadcastSystemMessage(msg, false);
 
-                                                    ctx.getSource()
-                                                            .getServer()
-                                                            .getPlayerList()
-                                                            .broadcastSystemMessage(msg, false);
-                                                } else if (submodeStr.equals("message")) {
-                                                    matchMode = LockoutGame.DeathMatchMode.MESSAGE;
-                                                    Component msg = Component.literal("✓ Mode set to: DEATH (MESSAGE)").withStyle(style -> style.withColor(0x55FF55));
+                                                        return 1;
+                                                    } catch (IllegalArgumentException e) {
+                                                        ctx.getSource().sendFailure(Component.literal("Invalid game mode: " + modeName));
+                                                        return 0;
+                                                    }
+                                                })
+                                        )
+                                )
+                        )
+                        // /lockout configure mode
+                        .then(Commands.literal("mode")
+                                .then(Commands.literal("kills")
+                                        .executes(ctx -> {
+                                            LockoutGame.INSTANCE.setMode(LockoutGame.GameMode.KILLS);
+                                            Component msg = Component.literal("✓ Mode set to: KILLS").withStyle(style -> style.withColor(0x55FF55));
 
-                                                    ctx.getSource()
-                                                            .getServer()
-                                                            .getPlayerList()
-                                                            .broadcastSystemMessage(msg, false);
-                                                } else {
-                                                    ctx.getSource().sendFailure(Component.literal("❌ Invalid submode! Use 'source' or 'message'"));
-                                                    return 0;
-                                                }
+                                            ctx.getSource()
+                                                    .getServer()
+                                                    .getPlayerList()
+                                                    .broadcastSystemMessage(msg, false);
+                                            return 1;
+                                        })
+                                )
+                                .then(Commands.literal("breed")
+                                        .executes(ctx -> {
+                                            LockoutGame.INSTANCE.setMode(LockoutGame.GameMode.BREED);
+                                            Component msg = Component.literal("✓ Mode set to: BREED").withStyle(style -> style.withColor(0x55FF55));
 
-                                                LockoutGame.INSTANCE.setMode(LockoutGame.GameMode.DEATH);
-                                                LockoutGame.INSTANCE.setDeathMatchMode(matchMode);
-                                                return 1;
-                                            })
-                                    )
-                            )
+                                            ctx.getSource()
+                                                    .getServer()
+                                                    .getPlayerList()
+                                                    .broadcastSystemMessage(msg, false);
+                                            return 1;
+                                        })
+                                )
+                                .then(Commands.literal("mixed")
+                                        .executes(ctx -> {
+                                            LockoutGame.INSTANCE.setMode(LockoutGame.GameMode.MIXED);
+                                            Component msg = Component.literal("✓ Mode set to: MIXED").withStyle(style -> style.withColor(0x55FF55));
+
+                                            ctx.getSource()
+                                                    .getServer()
+                                                    .getPlayerList()
+                                                    .broadcastSystemMessage(msg, false);
+                                            return 1;
+                                        })
+                                )
+                                .then(Commands.literal("armor")
+                                        .then(Commands.argument("submode", StringArgumentType.word())
+                                                .suggests((context, builder) -> {
+                                                    builder.suggest("set");
+                                                    builder.suggest("piece");
+                                                    return builder.buildFuture();
+                                                })
+                                                .executes(ctx -> {
+                                                    String submodeStr = StringArgumentType.getString(ctx, "submode").toLowerCase();
+                                                    LockoutGame.ArmorMode matchMode;
+
+                                                    if (submodeStr.equals("set")) {
+                                                        matchMode = LockoutGame.ArmorMode.SET;
+                                                        Component msg = Component.literal("✓ Mode set to: ARMOR (SET)").withStyle(style -> style.withColor(0x55FF55));
+
+                                                        ctx.getSource()
+                                                                .getServer()
+                                                                .getPlayerList()
+                                                                .broadcastSystemMessage(msg, false);
+                                                    } else if (submodeStr.equals("piece")) {
+                                                        matchMode = LockoutGame.ArmorMode.PIECE;
+                                                        Component msg = Component.literal("✓ Mode set to: ARMOR (PIECE)").withStyle(style -> style.withColor(0x55FF55));
+                                                        ctx.getSource()
+                                                                .getServer()
+                                                                .getPlayerList()
+                                                                .broadcastSystemMessage(msg, false);
+                                                    } else {
+                                                        ctx.getSource().sendFailure(Component.literal("❌ Invalid submode! Use 'set' or 'piece'"));
+                                                        return 0;
+                                                    }
+
+                                                    LockoutGame.INSTANCE.setMode(LockoutGame.GameMode.ARMOR);
+                                                    LockoutGame.INSTANCE.setArmorMode(matchMode);
+                                                    return 1;
+                                                })
+                                        )
+                                )
+                                .then(Commands.literal("advancements")
+                                        .executes(ctx -> {
+                                            LockoutGame.INSTANCE.setMode(LockoutGame.GameMode.ADVANCEMENTS);
+                                            Component msg = Component.literal("✓ Mode set to: ADVANCEMENTS").withStyle(style -> style.withColor(0x55FF55));
+
+                                            ctx.getSource()
+                                                    .getServer()
+                                                    .getPlayerList()
+                                                    .broadcastSystemMessage(msg, false);
+                                            return 1;
+                                        })
+                                )
+                                .then(Commands.literal("foods")
+                                        .executes(ctx -> {
+                                            LockoutGame.INSTANCE.setMode(LockoutGame.GameMode.FOODS);
+                                            Component msg = Component.literal("✓ Mode set to: FOODS").withStyle(style -> style.withColor(0x55FF55));
+
+                                            ctx.getSource()
+                                                    .getServer()
+                                                    .getPlayerList()
+                                                    .broadcastSystemMessage(msg, false);
+                                            return 1;
+                                        })
+                                )
+                                .then(Commands.literal("death")
+                                        .then(Commands.argument("submode", StringArgumentType.word())
+                                                .suggests((context, builder) -> {
+                                                    builder.suggest("source");
+                                                    builder.suggest("message");
+                                                    return builder.buildFuture();
+                                                })
+                                                .executes(ctx -> {
+                                                    String submodeStr = StringArgumentType.getString(ctx, "submode").toLowerCase();
+                                                    LockoutGame.DeathMatchMode matchMode;
+
+                                                    if (submodeStr.equals("source")) {
+                                                        matchMode = LockoutGame.DeathMatchMode.SOURCE;
+                                                        Component msg = Component.literal("✓ Mode set to: DEATH (SOURCE)").withStyle(style -> style.withColor(0x55FF55));
+
+                                                        ctx.getSource()
+                                                                .getServer()
+                                                                .getPlayerList()
+                                                                .broadcastSystemMessage(msg, false);
+                                                    } else if (submodeStr.equals("message")) {
+                                                        matchMode = LockoutGame.DeathMatchMode.MESSAGE;
+                                                        Component msg = Component.literal("✓ Mode set to: DEATH (MESSAGE)").withStyle(style -> style.withColor(0x55FF55));
+
+                                                        ctx.getSource()
+                                                                .getServer()
+                                                                .getPlayerList()
+                                                                .broadcastSystemMessage(msg, false);
+                                                    } else {
+                                                        ctx.getSource().sendFailure(Component.literal("❌ Invalid submode! Use 'source' or 'message'"));
+                                                        return 0;
+                                                    }
+
+                                                    LockoutGame.INSTANCE.setMode(LockoutGame.GameMode.DEATH);
+                                                    LockoutGame.INSTANCE.setDeathMatchMode(matchMode);
+                                                    return 1;
+                                                })
+                                        )
+                                )
+                        )
                     )
                     // /lockout player
                     .then(Commands.literal("player")
@@ -513,13 +601,23 @@ public class Lockout implements ModInitializer {
                                 int playerCount = LockoutGame.INSTANCE.getPlayers().size();
                                 boolean active = LockoutGame.INSTANCE.isActive();
                                 boolean paused = LockoutGame.INSTANCE.isPaused();
-                                String mode = LockoutGame.INSTANCE.getMode().toString();
+                                LockoutGame.GameMode mode = LockoutGame.INSTANCE.getMode();
                                 String spawnInfo = LockoutGame.INSTANCE.getSpawnInfo();
 
                                 ctx.getSource().sendSystemMessage(Component.literal("--- Lockout Status ---"));
                                 ctx.getSource().sendSystemMessage(Component.literal("Active: " + (active ? "Yes" : "No")));
                                 ctx.getSource().sendSystemMessage(Component.literal("Paused: " + (paused ? "Yes" : "No")));
-                                ctx.getSource().sendSystemMessage(Component.literal("Mode: " + mode));
+                                ctx.getSource().sendSystemMessage(Component.literal("Mode: " + mode.toString()));
+
+                                // Show mixed mode configuration if in MIXED mode
+                                if (mode == LockoutGame.GameMode.MIXED) {
+                                    Set<LockoutGame.GameMode> mixedModes = LockoutGame.INSTANCE.getMixedModes();
+                                    String modesStr = mixedModes.stream()
+                                            .map(Enum::name)
+                                            .collect(Collectors.joining(", "));
+                                    ctx.getSource().sendSystemMessage(Component.literal("  Mixed Modes: " + modesStr));
+                                }
+
                                 ctx.getSource().sendSystemMessage(Component.literal("Goal: " + goal));
                                 ctx.getSource().sendSystemMessage(Component.literal("Spawnpoint: " + spawnInfo));
                                 ctx.getSource().sendSystemMessage(Component.literal("Players: " + playerCount));
