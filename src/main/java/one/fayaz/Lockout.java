@@ -247,6 +247,23 @@ public class Lockout implements ModInitializer {
                                         })
                                 )
                         )
+                        // /lockout configure snarky_messages <bool>
+                        .then(Commands.literal("snarky_messages")
+                                .then(Commands.argument("boolean", BoolArgumentType.bool())
+                                        .executes(ctx -> {
+                                            boolean snarky_messages = BoolArgumentType.getBool(ctx, "boolean");
+                                            LockoutGame.INSTANCE.setSnarkyMessages(snarky_messages);
+
+                                            Component msg = Component.literal("✓ Snarky messages turned " + (snarky_messages ? "On" : "Off")).withStyle(style -> style.withColor(0x55FF55));
+                                            ctx.getSource()
+                                                    .getServer()
+                                                    .getPlayerList()
+                                                    .broadcastSystemMessage(msg, false);
+
+                                            return 1;
+                                        })
+                                )
+                        )
                         // /lockout configure mixed include
                         .then(Commands.literal("mixed")
                                 // /lockout configure mixed include

@@ -80,6 +80,7 @@ public class LockoutGame {
     private ArmorMode armorMode = ArmorMode.SET;
     private DeathMatchMode deathMatchMode = DeathMatchMode.SOURCE;
     private static boolean doSwitch = false;
+    private static boolean snarkyMessages = true;
     private final Map<UUID, PlayerEntry> players = new LinkedHashMap<>();
     private final Set<String> claimedItems = new HashSet<>();
 
@@ -104,6 +105,10 @@ public class LockoutGame {
 
     public void setDoSwitch(boolean doSwitch) {
         this.doSwitch = doSwitch;
+    }
+
+    public void setSnarkyMessages(boolean snarkyMessages) {
+        this.snarkyMessages = snarkyMessages;
     }
 
     public void setArmorMode(ArmorMode armorMode) {
@@ -456,6 +461,9 @@ public class LockoutGame {
 
         // Already claimed
         if (claimedItems.contains(materialName)) {
+            if (snarkyMessages) {
+                player.sendSystemMessage(Component.literal("❌ Someone's already worn that one!").withStyle(style -> style.withColor(0xFF5555)));
+            }
             return;
         }
 
@@ -549,7 +557,9 @@ public class LockoutGame {
         String animalKey = entityTypeId.toString();
 
         if (claimedItems.contains(animalKey)) {
-            player.sendSystemMessage(Component.literal("❌ Someone's already bred that one!").withStyle(style -> style.withColor(0xFF5555)));
+            if (snarkyMessages) {
+                player.sendSystemMessage(Component.literal("❌ Someone's already bred that one!").withStyle(style -> style.withColor(0xFF5555)));
+            }
             return;
         }
 
@@ -585,7 +595,9 @@ public class LockoutGame {
         String advancementKey = advancement.toString();
 
         if (claimedItems.contains(advancementKey)) {
-            player.sendSystemMessage(Component.literal("❌ Someone's already claimed that one!").withStyle(style -> style.withColor(0xFF5555)));
+            if (snarkyMessages) {
+                player.sendSystemMessage(Component.literal("❌ Someone's already claimed that one!").withStyle(style -> style.withColor(0xFF5555)));
+            }
             return;
         }
 
@@ -811,7 +823,9 @@ public class LockoutGame {
     public void handleDeath(ServerPlayer player, DamageSource source) {
         if (!active || paused || isCountingDown) return;
         if ((mode != GameMode.DEATH && mode != GameMode.MIXED) || (mode == GameMode.MIXED && !mixedModes.contains(GameMode.DEATH))) {
-            player.sendSystemMessage(Component.literal("❌ That's the wrong game mode!").withStyle(style -> style.withColor(0xFF5555)));
+            if (snarkyMessages) {
+                player.sendSystemMessage(Component.literal("❌ That's the wrong game mode!").withStyle(style -> style.withColor(0xFF5555)));
+            }
             return;
         }
 
@@ -839,7 +853,9 @@ public class LockoutGame {
         }
 
         if (claimedItems.contains(uniqueKey)) {
-            player.sendSystemMessage(Component.literal("❌ Someone's already claimed that one!").withStyle(style -> style.withColor(0xFF5555)));
+            if (snarkyMessages) {
+                player.sendSystemMessage(Component.literal("❌ Someone's already claimed that one!").withStyle(style -> style.withColor(0xFF5555)));
+            }
             return;
         }
 
@@ -884,7 +900,9 @@ public class LockoutGame {
         String entityName = killed.getType().getDescription().getString();
 
         if (claimedItems.contains(entityName)) {
-            player.sendSystemMessage(Component.literal("❌ Someone's already claimed that one!").withStyle(style -> style.withColor(0xFF5555)));
+            if (snarkyMessages) {
+                player.sendSystemMessage(Component.literal("❌ Someone's already claimed that one!").withStyle(style -> style.withColor(0xFF5555)));
+            }
             return;
         }
 
