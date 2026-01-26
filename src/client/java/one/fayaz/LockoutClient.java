@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import static one.fayaz.GoalType.*;
+
 public class LockoutClient implements ClientModInitializer {
 
     // ================= CLIENT STATE =================
@@ -338,37 +340,11 @@ public class LockoutClient implements ClientModInitializer {
                 // Item if claimed
                 if (slotIndex < player.icons.size()) {
                     graphics.renderItem(player.icons.get(slotIndex), x + 1, y + 1);
-                    LockoutNetworking.ClaimData claim = player.claims.get(slotIndex);
 
-                    if (clientMode.equals("MIXED")) {
-                        // Define overlay
-                        Identifier overlay = switch (claim.type()) {
-                            case KILL -> Identifier.fromNamespaceAndPath("lockout", "textures/gui/sword.png");
-                            case DEATH -> Identifier.fromNamespaceAndPath("lockout", "textures/gui/skull.png");
-                            case ADVANCEMENT ->
-                                    Identifier.fromNamespaceAndPath("lockout", "textures/gui/recipe_book.png");
-                            case FOOD -> Identifier.fromNamespaceAndPath("lockout", "textures/gui/food.png");
-                            case ARMOR -> Identifier.fromNamespaceAndPath("lockout", "textures/gui/armor.png");
-                            case BREED -> Identifier.fromNamespaceAndPath("lockout", "textures/gui/heart.png");
-                        };
-
-                        // Scale and render the 16x16 texture as 8x8 in the corner
-                        graphics.pose().pushMatrix();
-                        graphics.pose().translate(x + slotSize - 8, y + slotSize - 8);
-                        graphics.pose().scale(0.5F, 0.5F);  // Scale down to 50% (16x16 -> 8x8)
-                        graphics.blit(
-                                RenderPipelines.GUI_TEXTURED,
-                                overlay,
-                                0,
-                                0,
-                                0,    // u (texture x)
-                                0,    // v (texture y)
-                                16,   // width on screen (will be scaled to 8)
-                                16,   // height on screen (will be scaled to 8)
-                                16,   // texture width
-                                16    // texture height
-                        );
-                        graphics.pose().popMatrix();
+                    // Render overlay for mixed mode
+                    if (clientMode.equals("MIXED") && slotIndex < player.claims.size()) {
+                        LockoutNetworking.ClaimData claim = player.claims.get(slotIndex);
+                        renderMixedModeOverlay(graphics, claim, x, y, slotSize);
                     }
                 }
 
@@ -379,6 +355,7 @@ public class LockoutClient implements ClientModInitializer {
         for (PlayerData player : clientPlayers) {
             if (player.icons.size() >= clientGoal && clientGoal > 0) {
                 ItemStack winningIcon = player.icons.get(player.icons.size() - 1);
+                LockoutNetworking.ClaimData claim = player.claims.get(player.icons.size() - 1);
 
                 // Add winning player's color glow
                 int winTint = (player.color & 0xFFFFFF) | 0x88000000;
@@ -396,10 +373,16 @@ public class LockoutClient implements ClientModInitializer {
                 graphics.pose().scale(1.5F, 1.5F);
                 graphics.renderItem(winningIcon, 0, 0);
                 graphics.pose().popMatrix();
-                break;
+
+                // Render overlay for mixed mode
+                if (clientMode.equals("MIXED")) {
+                    renderMixedModeOverlay(graphics, claim, victoryBoxX, victoryBoxY, victoryBoxSize);
+                }
             }
+            break;
         }
     }
+
 
     private void renderSlotBackground(GuiGraphics graphics, int x, int y, int size, int tint, boolean isClaimed) {
         // Use the vanilla container slot sprite
@@ -412,5 +395,34 @@ public class LockoutClient implements ClientModInitializer {
         if (isClaimed) {
             graphics.fill(x + 1, y + 1, x + size - 1, y + size - 1, tint);
         }
+    }
+    private void renderMixedModeOverlay(GuiGraphics graphics, LockoutNetworking.ClaimData claim, int x, int y, int slotSize) {
+        // Define overlay based on claim type
+        Identifier overlay = switch (claim.type()) {
+            case KILL -> Identifier.fromNamespaceAndPath("lockout", "textures/gui/sword.png");
+            case DEATH -> Identifier.fromNamespaceAndPath("lockout", "textures/gui/skull.png");
+            case ADVANCEMENT -> Identifier.fromNamespaceAndPath("lockout", "textures/gui/recipe_book.png");
+            case FOOD -> Identifier.fromNamespaceAndPath("lockout", "textures/gui/food.png");
+            case ARMOR -> Identifier.fromNamespaceAndPath("lockout", "textures/gui/armor.png");
+            case BREED -> Identifier.fromNamespaceAndPath("lockout", "textures/gui/heart.png");
+        };
+
+        // Scale and render the 16x16 texture as 8x8 in the corner
+        graphics.pose().pushMatrix();
+        graphics.pose().translate(x + slotSize - 8, y + slotSize - 8);
+        graphics.pose().scale(0.5F, 0.5F);  // Scale down to 50% (16x16 -> 8x8)
+        graphics.blit(
+                RenderPipelines.GUI_TEXTURED,
+                overlay,
+                0,
+                0,
+                0,    // u (texture x)
+                0,    // v (texture y)
+                16,   // width on screen (will be scaled to 8)
+                16,   // height on screen (will be scaled to 8)
+                16,   // texture width
+                16    // texture height
+        );
+        graphics.pose().popMatrix();
     }
 }
