@@ -1,12 +1,14 @@
 package one.fayaz;
 
 import net.minecraft.advancements.AdvancementHolder;
+import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.PlayerAdvancements;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
@@ -17,9 +19,11 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Relative;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.LevelData;
+import net.minecraft.world.level.storage.ServerLevelData;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.*;
@@ -71,6 +75,7 @@ public class LockoutGame {
     }
     private boolean active = false;
     private boolean paused = false;
+    private boolean resetWorld = false;
     private String pausedPlayerName = "";
     private int countdownTicks = 0;
     private boolean isCountingDown = false;
@@ -101,6 +106,10 @@ public class LockoutGame {
 
     public void setMode(GameMode mode) {
         this.mode = mode;
+    }
+
+    public void setResetWorld(boolean resetWorld) {
+        this.resetWorld = resetWorld;
     }
 
     public void setDoSwitch(boolean doSwitch) {
@@ -189,6 +198,27 @@ public class LockoutGame {
         return players.size();
     }
 
+    public void resetLevel(MinecraftServer server) {
+        // Apply reset to every loaded level (Overworld, Nether, End)
+        for (ServerLevel level : server.getAllLevels()) {
+            // Time reset (WIP)
+//            level.serverLevelData.setDayTime(1000L);
+
+            // Weather Reset
+            level.resetWeatherCycle();
+
+            // Kill everything except players
+            level.getAllEntities().forEach(entity -> {
+                if (!(entity instanceof ServerPlayer)) {
+                    entity.discard();
+                }
+            });
+
+            // Force chunk tick cleanup
+            level.getChunkSource().tick(() -> true, true);
+        }
+    }
+
     public void start(MinecraftServer server, GameMode mode) {
         if (canStart() < 2) {
             broadcastToServer(server, Component.literal("🎮 FAILED TO START").withStyle(style -> style.withColor(0xFF5555).withBold(true)));
@@ -214,6 +244,10 @@ public class LockoutGame {
                 preparePlayer(player);
                 freezePlayer(player);
             }
+        }
+
+        if (this.resetWorld) {
+            resetLevel(server);
         }
 
         String modeName = switch (mode) {
@@ -563,10 +597,10 @@ public class LockoutGame {
             return;
         }
 
-        claimedItems.add(animalKey);
-        entry.addClaim(animalKey, GoalType.BREED);
-        
         String animalName = Component.translatable(animal.getType().getDescriptionId()).getString();
+
+        claimedItems.add(animalName);
+        entry.addClaim(animalName, GoalType.BREED);
 
         broadcastToServer(player.level().getServer(),
                 Component.literal("❤ " + entry.getName() + " bred " + animalName.toLowerCase() + "s!").withStyle(style -> style.withColor(entry.getColor())));
@@ -658,11 +692,40 @@ public class LockoutGame {
         player.setGameMode(GameType.SPECTATOR);
     }
 
+    private static void revokeAllAdvancements(ServerPlayer player) {
+        PlayerAdvancements advancements = player.getAdvancements();
+        MinecraftServer server = player.level().getServer();
+
+        for (AdvancementHolder holder : server.getAdvancements().getAllAdvancements()) {
+            AdvancementProgress progress = advancements.getOrStartProgress(holder);
+
+            for (String criterion : progress.getRemainingCriteria()) {
+                advancements.revoke(holder, criterion);
+            }
+
+            for (String criterion : progress.getCompletedCriteria()) {
+                advancements.revoke(holder, criterion);
+            }
+        }
+    }
+
+    private static void revokeAllRecipes(ServerPlayer player) {
+        MinecraftServer server = player.level().getServer();
+
+        Collection<RecipeHolder<?>> allRecipes =
+                server.getRecipeManager().getRecipes();
+
+        player.resetRecipes(allRecipes);
+    }
+
     private void preparePlayer(ServerPlayer player) {
         player.getInventory().clearContent();
         player.setHealth(player.getMaxHealth());
         player.getFoodData().setFoodLevel(20);
         player.getFoodData().setSaturation(20.0f);
+
+        revokeAllAdvancements(player);
+        revokeAllRecipes(player);
 
         var server = player.level().getServer();
 

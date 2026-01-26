@@ -247,6 +247,23 @@ public class Lockout implements ModInitializer {
                                         })
                                 )
                         )
+                        // /lockout configure reset_world <bool>
+                        .then(Commands.literal("reset_world")
+                                .then(Commands.argument("boolean", BoolArgumentType.bool())
+                                        .executes(ctx -> {
+                                            boolean reset_world = BoolArgumentType.getBool(ctx, "boolean");
+                                            LockoutGame.INSTANCE.setResetWorld(reset_world);
+
+                                            Component msg = Component.literal("✓ Reset world turned " + (reset_world ? "On" : "Off")).withStyle(style -> style.withColor(0x55FF55));
+                                            ctx.getSource()
+                                                    .getServer()
+                                                    .getPlayerList()
+                                                    .broadcastSystemMessage(msg, false);
+
+                                            return 1;
+                                        })
+                                )
+                        )
                         // /lockout configure snarky_messages <bool>
                         .then(Commands.literal("snarky_messages")
                                 .then(Commands.argument("boolean", BoolArgumentType.bool())
