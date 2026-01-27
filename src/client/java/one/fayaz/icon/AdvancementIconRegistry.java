@@ -1,4 +1,4 @@
-package one.fayaz;
+package one.fayaz.icon;
 
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;

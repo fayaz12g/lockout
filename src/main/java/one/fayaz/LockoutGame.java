@@ -146,13 +146,13 @@ public class LockoutGame {
 
     public boolean addPlayer(ServerPlayer player, int color) {
         if (active) {
-            player.sendSystemMessage(Component.literal("❌ Cannot add players while game is active!").withStyle(style -> style.withColor(0xFF5555)));
+            player.sendSystemMessage(Component.literal("❌ Cannot add player(s) while game is active!").withStyle(style -> style.withColor(0xFF5555)));
             return false;
         }
 
         UUID uuid = player.getUUID();
         if (players.containsKey(uuid)) {
-            player.sendSystemMessage(Component.literal("❌ Player already added!").withStyle(style -> style.withColor(0xFF5555)));
+            player.sendSystemMessage(Component.literal("❌ Player(s) already added!").withStyle(style -> style.withColor(0xFF5555)));
             return false;
         }
 

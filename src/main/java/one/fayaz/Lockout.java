@@ -217,16 +217,21 @@ public class Lockout implements ModInitializer {
                         .then(Commands.literal("goal")
                                 .then(Commands.argument("number", IntegerArgumentType.integer(1))
                                         .executes(ctx -> {
-                                            int goal = IntegerArgumentType.getInteger(ctx, "number");
-                                            LockoutGame.INSTANCE.setGoal(goal);
+                                            if (!LockoutGame.INSTANCE.isActive()) {
+                                                int goal = IntegerArgumentType.getInteger(ctx, "number");
+                                                LockoutGame.INSTANCE.setGoal(goal);
 
-                                            Component msg = Component.literal("✓ Goal set to: " + goal).withStyle(style -> style.withColor(0x55FF55));
-                                            ctx.getSource()
-                                                    .getServer()
-                                                    .getPlayerList()
-                                                    .broadcastSystemMessage(msg, false);
+                                                Component msg = Component.literal("✓ Goal set to: " + goal).withStyle(style -> style.withColor(0x55FF55));
+                                                ctx.getSource()
+                                                        .getServer()
+                                                        .getPlayerList()
+                                                        .broadcastSystemMessage(msg, false);
 
-                                            return 1;
+                                                return 1;
+                                            } else {
+                                                ctx.getSource().sendFailure(Component.literal("❌ Cannot change goal while game is active."));
+                                                return 0;
+                                            }
                                         })
                                 )
                         )
@@ -508,7 +513,7 @@ public class Lockout implements ModInitializer {
                     // /lockout player
                     .then(Commands.literal("player")
                             .then(Commands.literal("add")
-                                    .then(Commands.argument("player", EntityArgument.player())
+                                    .then(Commands.argument("players", EntityArgument.players())
                                             .then(Commands.argument("color", StringArgumentType.word())
                                                     .suggests((context, builder) -> {
                                                         for (String colorName : NAMED_COLORS.keySet()) {
@@ -517,38 +522,84 @@ public class Lockout implements ModInitializer {
                                                         return builder.buildFuture();
                                                     })
                                                     .executes(ctx -> {
-                                                        ServerPlayer player = EntityArgument.getPlayer(ctx, "player");
+                                                        Collection<ServerPlayer> players =
+                                                                EntityArgument.getPlayers(ctx, "players");
                                                         String colorStr = StringArgumentType.getString(ctx, "color");
+
 
                                                         int color = parseColor(colorStr);
                                                         if (color == -1) {
-                                                            ctx.getSource().sendFailure(Component.literal("❌ Invalid color!"));
+                                                            ctx.getSource().sendFailure(
+                                                                    Component.literal("❌ Invalid color!")
+                                                            );
                                                             return 0;
                                                         }
 
-                                                        String existingPlayer = LockoutGame.INSTANCE.getPlayerWithColor(color);
-                                                        if (existingPlayer != null) {
-                                                            ctx.getSource().sendFailure(Component.literal("❌ " + existingPlayer + " already has that color!"));
-                                                            return 0;
+
+                                                        int added = 0;
+
+
+                                                        for (ServerPlayer player : players) {
+                                                            String existingPlayer =
+                                                                    LockoutGame.INSTANCE.getPlayerWithColor(color);
+
+
+                                                            if (existingPlayer != null) {
+                                                                ctx.getSource().sendFailure(
+                                                                        Component.literal(
+                                                                                "❌ " + existingPlayer + " already has that color!"
+                                                                        )
+                                                                );
+                                                                break;
+                                                            }
+
+
+                                                            if (LockoutGame.INSTANCE.addPlayer(player, color)) {
+                                                                ctx.getSource().sendSystemMessage(
+                                                                        Component.literal("✓ Added " + player.getName().getString())
+                                                                                .withStyle(style -> style.withColor(color))
+                                                                );
+                                                                added++;
+                                                            }
                                                         }
 
-                                                        if (LockoutGame.INSTANCE.addPlayer(player, color)) {
-                                                            ctx.getSource().sendSystemMessage(Component.literal("✓ Added " + player.getName().getString()).withStyle(style -> style.withColor(color)));
-                                                        }
-                                                        return 1;
+
+                                                        return added;
                                                     })
                                             )
                                             .executes(ctx -> {
-                                                ServerPlayer player = EntityArgument.getPlayer(ctx, "player");
-                                                int color = getNextAvailableColor();
+                                                Collection<ServerPlayer> players =
+                                                        EntityArgument.getPlayers(ctx, "players");
 
-                                                if (LockoutGame.INSTANCE.addPlayer(player, color)) {
-                                                    ctx.getSource().sendSystemMessage(Component.literal("✓ Added " + player.getName().getString()).withStyle(style -> style.withColor(color)));
+
+                                                int added = 0;
+
+
+                                                for (ServerPlayer player : players) {
+                                                    int color = getNextAvailableColor();
+                                                    if (color == -1) {
+                                                        ctx.getSource().sendFailure(
+                                                                Component.literal("❌ No available colors left!")
+                                                        );
+                                                        break;
+                                                    }
+
+
+                                                    if (LockoutGame.INSTANCE.addPlayer(player, color)) {
+                                                        ctx.getSource().sendSystemMessage(
+                                                                Component.literal("✓ Added " + player.getName().getString())
+                                                                        .withStyle(style -> style.withColor(color))
+                                                        );
+                                                        added++;
+                                                    }
                                                 }
-                                                return 1;
+
+
+                                                return added;
                                             })
                                     )
                             )
+
                             .then(Commands.literal("modify")
                                     .then(Commands.argument("player", EntityArgument.player())
                                             .then(Commands.argument("color", StringArgumentType.word())

@@ -1,4 +1,4 @@
-package one.fayaz;
+package one.fayaz.icon;
 
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -8,10 +8,9 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.SpawnEggItem;
+import one.fayaz.GoalType;
 
 import java.util.Optional;
-
-import static one.fayaz.LockoutClient.clientMode;
 
 public class ItemStackFinder {
 
@@ -53,7 +52,7 @@ public class ItemStackFinder {
 
         // Armor mode - show turtle helmet or chestplate
         if (goalType==GoalType.ARMOR) {
-            return one.fayaz.client.ArmorIconRegistry.get(lower);
+            return ArmorIconRegistry.get(lower);
         }
 
         // Advancements mode - show relevant icon
