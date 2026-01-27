@@ -8,8 +8,11 @@ import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import one.fayaz.icon.ItemStackFinder;
 import org.lwjgl.glfw.GLFW;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 
